@@ -73,11 +73,6 @@ const UploadPage = () => {
   };
 
   const handleStartAnalysis = async () => {
-    if (!nom.trim()) {
-      toast.error('الرجاء إدخال الاسم');
-      return;
-    }
-
     if (files.length === 0) {
       toast.error('الرجاء رفع ملفات أولاً');
       return;
@@ -88,11 +83,16 @@ const UploadPage = () => {
       toast.error('بعض الملفات لم يتم إعدادها بعد');
       return;
     }
+    
+    const filesWithoutNom = files.filter(f => !f.config?.nom);
+    if (filesWithoutNom.length > 0) {
+      toast.error('بعض الملفات لا تحتوي على اسم (nom). الرجاء إعدادها.');
+      return;
+    }
 
     try {
       const response = await axios.post(`${API}/analyze`, {
         file_ids: files.map(f => f.file_id),
-        nom: nom,
         merge_enabled: true
       });
       
