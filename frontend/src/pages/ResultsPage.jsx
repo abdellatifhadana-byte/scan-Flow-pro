@@ -8,9 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, ArrowRight, CheckCircle2, AlertCircle, XCircle, Search, Package, FileCheck, Files, Trash2, RefreshCw, RotateCcw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { FileText, Download, ArrowRight, CheckCircle2, AlertCircle, XCircle, Search, Package, Files, Sparkles } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -22,15 +20,10 @@ const ResultsPage = () => {
   const [filteredPages, setFilteredPages] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPages, setSelectedPages] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [filterByFile, setFilterByFile] = useState('all');
   const [editingCell, setEditingCell] = useState(null);
-  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
-  const [showRestartDialog, setShowRestartDialog] = useState(false);
-  const [showCleanAllDialog, setShowCleanAllDialog] = useState(false);
   const [savingChanges, setSavingChanges] = useState(false);
 
   useEffect(() => {
@@ -39,14 +32,13 @@ const ResultsPage = () => {
 
   useEffect(() => {
     filterResults();
-  }, [searchTerm, filterType, filterByFile, allPages]);
+  }, [searchTerm, filterType, selectedFiles, allPages]);
 
   const loadResults = async () => {
     try {
       const response = await axios.get(`${API}/results/${analysisId}`);
       const resultsData = response.data.results || [];
       
-      // تحويل النتائج إلى صفحات فردية
       const pages = resultsData.map((result, idx) => ({
         id: `${result.file_id}-${result.source_page}`,
         index: idx,
@@ -68,7 +60,6 @@ const ResultsPage = () => {
       setAllPages(pages);
       setFilteredPages(pages);
       
-      // تحميل الإحصائيات
       const analysisResponse = await axios.get(`${API}/analysis/${analysisId}`);
       setStatistics(analysisResponse.data.statistics);
       
@@ -82,7 +73,6 @@ const ResultsPage = () => {
   const filterResults = () => {
     let filtered = [...allPages];
 
-    // البحث
     if (searchTerm) {
       filtered = filtered.filter(page => {
         const searchLower = searchTerm.toLowerCase();
@@ -90,45 +80,25 @@ const ResultsPage = () => {
           page.code?.toString().includes(searchLower) ||
           page.parentFile?.toLowerCase().includes(searchLower) ||
           page.filename?.toLowerCase().includes(searchLower) ||
-          page.nom?.toLowerCase().includes(searchLower) ||
-          page.keyword?.toLowerCase().includes(searchLower)
+          page.nom?.toLowerCase().includes(searchLower)
         );
       });
     }
 
-    // الفلترة حسب الملف
-    if (filterByFile !== 'all') {
-      filtered = filtered.filter(page => page.parentFile === filterByFile);
+    if (selectedFiles.length > 0) {
+      filtered = filtered.filter(page => selectedFiles.includes(page.parentFile));
     }
 
-    // الفلترة حسب النوع
     if (filterType !== 'all') {
       filtered = filtered.filter(page => {
         if (filterType === 'high') return page.confidenceLevel === 'high';
         if (filterType === 'medium') return page.confidenceLevel === 'medium';
         if (filterType === 'low') return page.confidenceLevel === 'low';
-        if (filterType === 'edited') return page.originalCode !== page.code;
         return true;
       });
     }
 
     setFilteredPages(filtered);
-  };
-
-  const handleSelectPage = (pageId) => {
-    setSelectedPages(prev => 
-      prev.includes(pageId) 
-        ? prev.filter(id => id !== pageId)
-        : [...prev, pageId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedPages.length === filteredPages.length) {
-      setSelectedPages([]);
-    } else {
-      setSelectedPages(filteredPages.map(p => p.id));
-    }
   };
 
   const handleEditCell = (pageId, field, value) => {
@@ -149,10 +119,10 @@ const ResultsPage = () => {
         nom: updates.nom
       });
       
-      toast.success('تم حفظ التغييرات تلقائياً');
+      toast.success('✓ تم الحفظ');
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('خطأ في حفظ التغييرات');
+      toast.error('خطأ في الحفظ');
     } finally {
       setSavingChanges(false);
     }
@@ -186,115 +156,32 @@ const ResultsPage = () => {
     }
   };
 
-  const getConfidenceBadge = (confidence, level) => {
-    if (level === 'high' || confidence >= 80) {
-      return <Badge className="bg-green-500 flex items-center gap-1"><CheckCircle2 size={14} /> عالية {confidence?.toFixed(0)}%</Badge>;
-    } else if (level === 'medium' || confidence >= 50) {
-      return <Badge className="bg-yellow-500 flex items-center gap-1"><AlertCircle size={14} /> متوسطة {confidence?.toFixed(0)}%</Badge>;
-    } else {
-      return <Badge className="bg-red-500 flex items-center gap-1"><XCircle size={14} /> منخفضة {confidence?.toFixed(0)}%</Badge>;
-    }
-  };
-
-  const handleMergeByFiles = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error('الرجاء اختيار ملفات للتجميع');
-      return;
-    }
-
-    try {
-      toast.info(`جاري تجميع صفحات ${selectedFiles.length} ملف...`);
-      
-      const response = await axios.post(`${API}/merge-by-files`, {
-        analysis_id: analysisId,
-        parent_files: selectedFiles,
-        merge_type: 'merge'
-      });
-      
-      toast.success(`${response.data.message}\nتم إنشاء ${response.data.total_codes} ملف مدمج`);
-      
-      loadResults();
-    } catch (error) {
-      console.error('Merge by files error:', error);
-      toast.error('خطأ في التجميع: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleCreateIndividualByFiles = async () => {
+  const handleMergeSelected = async () => {
     if (selectedFiles.length === 0) {
       toast.error('الرجاء اختيار ملفات');
       return;
     }
 
     try {
-      toast.info(`جاري إنشاء ملفات فردية من ${selectedFiles.length} ملف...`);
+      toast.info(`جاري تجميع ${selectedFiles.length} ملف...`);
       
       const response = await axios.post(`${API}/merge-by-files`, {
         analysis_id: analysisId,
         parent_files: selectedFiles,
-        merge_type: 'individual'
-      });
-      
-      toast.success(`${response.data.message}\nتم إنشاء ${response.data.total_files} ملف منفصل`);
-      
-      loadResults();
-    } catch (error) {
-      console.error('Create individual by files error:', error);
-      toast.error('خطأ في الإنشاء: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleMergeSelected = async () => {
-    if (selectedPages.length === 0) {
-      toast.error('الرجاء اختيار صفحات للتجميع');
-      return;
-    }
-
-    try {
-      toast.info(`جاري تجميع ${selectedPages.length} صفحة...`);
-      
-      const response = await axios.post(`${API}/merge-selected`, {
-        analysis_id: analysisId,
-        page_ids: selectedPages,
         merge_type: 'merge'
       });
       
-      toast.success(`تم التجميع بنجاح! تم إنشاء ${response.data.files.length} ملف`);
-      
+      toast.success(`✓ ${response.data.message}`);
       loadResults();
     } catch (error) {
       console.error('Merge error:', error);
-      toast.error('خطأ في التجميع: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleCreateIndividual = async () => {
-    if (selectedPages.length === 0) {
-      toast.error('الرجاء اختيار صفحات');
-      return;
-    }
-
-    try {
-      toast.info(`جاري إنشاء ${selectedPages.length} ملف منفصل...`);
-      
-      const response = await axios.post(`${API}/create-individual`, {
-        analysis_id: analysisId,
-        page_ids: selectedPages,
-        merge_type: 'individual'
-      });
-      
-      toast.success(`تم الإنشاء بنجاح! ${response.data.files.length} ملف`);
-      
-      loadResults();
-    } catch (error) {
-      console.error('Create individual error:', error);
-      toast.error('خطأ في الإنشاء: ' + (error.response?.data?.detail || error.message));
+      toast.error('خطأ في التجميع');
     }
   };
 
   const handleMergeAll = async () => {
     try {
-      toast.info('جاري تجميع جميع الملفات...');
+      toast.info('جاري معالجة جميع الملفات...');
       
       const response = await axios.post(`${API}/merge-all`, {
         analysis_id: analysisId,
@@ -302,485 +189,258 @@ const ResultsPage = () => {
         merge_type: 'merge_all'
       });
       
-      toast.success(`تم تجميع الكل بنجاح! ${response.data.total_codes} كود`);
-      
+      toast.success(`✓ تم المعالجة بنجاح!`);
       loadResults();
     } catch (error) {
       console.error('Merge all error:', error);
-      toast.error('خطأ في التجميع الكامل: ' + (error.response?.data?.detail || error.message));
+      toast.error('خطأ في المعالجة');
     }
   };
 
-  const handleDownloadSelected = async () => {
-    if (selectedPages.length === 0) {
-      toast.error('الرجاء اختيار ملفات للتحميل');
-      return;
-    }
-
-    try {
-      toast.info('جاري تجهيز الملفات للتحميل...');
-      
-      const response = await axios.post(`${API}/download-selected`, {
-        analysis_id: analysisId,
-        page_ids: selectedPages
-      }, {
-        responseType: 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'selected_files.zip');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('تم تحميل الملفات بنجاح!');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('خطأ في التحميل: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleCleanupOldFiles = async () => {
-    try {
-      toast.info('جاري حذف الملفات القديمة...');
-      
-      const response = await axios.delete(`${API}/cleanup/old-files`);
-      
-      toast.success(response.data.message);
-      setShowCleanupDialog(false);
-      loadResults();
-    } catch (error) {
-      console.error('Cleanup error:', error);
-      toast.error('خطأ في الحذف: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleCleanAll = async () => {
-    try {
-      toast.info('جاري تنظيف جميع البيانات...');
-      
-      const response = await axios.delete(`${API}/cleanup/all`);
-      
-      toast.success(response.data.message);
-      setShowCleanAllDialog(false);
-      
-      // العودة للصفحة الرئيسية
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-    } catch (error) {
-      console.error('Clean all error:', error);
-      toast.error('خطأ في التنظيف: ' + (error.response?.data?.detail || error.message));
-    }
-  };
-
-  const handleRestartApp = async () => {
-    try {
-      toast.info('جاري إعادة تشغيل التطبيق...');
-      
-      await axios.post(`${API}/system/restart`);
-      
-      toast.success('سيتم إعادة تشغيل التطبيق خلال ثوانٍ...');
-      setShowRestartDialog(false);
-      
-      // تحديث الصفحة بعد 5 ثواني
-      setTimeout(() => {
-        window.location.reload();
-      }, 5000);
-    } catch (error) {
-      console.error('Restart error:', error);
-      toast.error('خطأ في إعادة التشغيل: ' + (error.response?.data?.detail || error.message));
+  const getConfidenceBadge = (confidence, level) => {
+    if (level === 'high' || confidence >= 80) {
+      return <Badge className="bg-emerald-500 text-white"><CheckCircle2 size={12} className="ml-1" /> {confidence?.toFixed(0)}%</Badge>;
+    } else if (level === 'medium' || confidence >= 50) {
+      return <Badge className="bg-amber-500 text-white"><AlertCircle size={12} className="ml-1" /> {confidence?.toFixed(0)}%</Badge>;
+    } else {
+      return <Badge className="bg-red-500 text-white"><XCircle size={12} className="ml-1" /> {confidence?.toFixed(0)}%</Badge>;
     }
   };
 
   const getUniqueFiles = () => {
-    const uniqueFiles = [...new Set(allPages.map(p => p.parentFile))];
-    return uniqueFiles;
+    return [...new Set(allPages.map(p => p.parentFile))];
   };
 
   if (loading) {
     return (
-      <div className="page-container" dir="rtl">
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="spinner"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container" dir="rtl">
-      <div className="page-header">
-        <h1 className="page-title">نتائج التحليل - عرض تفصيلي</h1>
-        <p className="page-subtitle">إجمالي {allPages.length} صفحة من {new Set(allPages.map(p => p.parentFile)).size} ملفات</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            نتائج التحليل
+          </h1>
+          <p className="text-gray-600">إجمالي {allPages.length} صفحة من {getUniqueFiles().length} ملفات</p>
+        </div>
 
-      {/* شريط الأدوات */}
-      <div className="card mb-4">
-        <div className="flex flex-col gap-4">
-          {/* الصف الأول: البحث والفلترة */}
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex-1 min-w-[250px] relative">
+        {/* Main Control Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          {/* Search and Filter */}
+          <div className="flex gap-4 items-center mb-6 flex-wrap">
+            <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute right-3 top-3 text-gray-400" size={20} />
               <Input
-                placeholder="ابحث بالكود، الملف، الاسم، أو الكلمة المفتاحية..."
+                placeholder="ابحث بالكود أو اسم الملف..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-                data-testid="search-input"
+                className="pr-10 h-11 border-2 border-gray-200 focus:border-blue-500"
               />
             </div>
-            <Select value={filterByFile} onValueChange={setFilterByFile}>
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="تصفية حسب الملف" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الملفات</SelectItem>
-                {getUniqueFiles().map((file, idx) => (
-                  <SelectItem key={idx} value={file}>{file}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 h-11 border-2 border-gray-200">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">الكل</SelectItem>
+                <SelectItem value="all">جميع المستويات</SelectItem>
                 <SelectItem value="high">ثقة عالية</SelectItem>
                 <SelectItem value="medium">ثقة متوسطة</SelectItem>
                 <SelectItem value="low">ثقة منخفضة</SelectItem>
-                <SelectItem value="edited">تم التعديل</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button variant="outline" onClick={() => navigate('/')} className="h-11">
               <ArrowRight size={16} className="ml-2" />
               العودة
             </Button>
           </div>
 
-          {/* الصف الثاني: الإحصائيات */}
-          {statistics && (
-            <div className="flex gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-green-500" />
-                <span>عالية: {statistics.high_confidence}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-yellow-500" />
-                <span>متوسطة: {statistics.medium_confidence}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <XCircle size={16} className="text-red-500" />
-                <span>منخفضة: {statistics.low_confidence}</span>
-              </div>
-              <div className="mr-auto text-blue-600 font-semibold">
-                المحددة: {selectedPages.length} من {filteredPages.length}
-              </div>
-            </div>
-          )}
-
-          {/* الصف الثالث: اختيار الملفات */}
-          <div className="border-t pt-3">
-            <h3 className="text-sm font-semibold mb-2 text-gray-700">اختيار الملفات للمعالجة:</h3>
-            <div className="flex gap-2 flex-wrap items-center">
+          {/* File Selection */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <FileText className="text-blue-600" size={20} />
+                اختر الملفات للعرض والمعالجة
+              </h3>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAllFiles}
               >
-                {selectedFiles.length === getUniqueFiles().length ? 'إلغاء تحديد الكل' : 'تحديد كل الملفات'}
+                {selectedFiles.length === getUniqueFiles().length ? 'إلغاء الكل' : 'تحديد الكل'}
               </Button>
-              {getUniqueFiles().map((file, idx) => (
-                <Badge
-                  key={idx}
-                  variant={selectedFiles.includes(file) ? "default" : "outline"}
-                  className="cursor-pointer px-3 py-2 text-sm"
-                  onClick={() => handleSelectFile(file)}
-                >
-                  <Checkbox
-                    checked={selectedFiles.includes(file)}
-                    className="ml-2"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  {file}
-                </Badge>
-              ))}
-              <span className="text-sm text-gray-500 mr-auto">
-                {selectedFiles.length} من {getUniqueFiles().length} ملف محدد
-              </span>
             </div>
+            <div className="flex gap-3 flex-wrap">
+              {getUniqueFiles().map((file, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectFile(file)}
+                  className={`cursor-pointer px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
+                    selectedFiles.includes(file)
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-lg scale-105'
+                      : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700'
+                  }`}
+                >
+                  <Checkbox checked={selectedFiles.includes(file)} />
+                  <span className="font-medium text-sm">{file}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500 mt-3">
+              {selectedFiles.length} من {getUniqueFiles().length} محدد
+            </p>
           </div>
 
-          {/* الصف الرابع: أزرار المعالجة حسب الملفات */}
-          <div className="flex gap-2 flex-wrap border-t pt-3">
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6 pt-6 border-t">
             <Button 
-              onClick={handleMergeByFiles}
+              onClick={handleMergeSelected}
               disabled={selectedFiles.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
             >
-              <Package size={16} className="ml-2" />
-              تجميع الملفات المحددة
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={handleCreateIndividualByFiles}
-              disabled={selectedFiles.length === 0}
-            >
-              <FileCheck size={16} className="ml-2" />
-              إنشاء فردي للملفات المحددة
+              <Package size={18} className="ml-2" />
+              تجميع الملفات المحددة ({selectedFiles.length})
             </Button>
             <Button 
               variant="outline"
               onClick={handleMergeAll}
+              className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
             >
-              <Files size={16} className="ml-2" />
-              تجميع الكل
-            </Button>
-          </div>
-
-          {/* الصف الخامس: أزرار معالجة الصفحات (النظام القديم) */}
-          <div className="flex gap-2 flex-wrap border-t pt-3">
-            <span className="text-xs text-gray-500 w-full mb-1">أو استخدم التحديد اليدوي للصفحات:</span>
-            <Button 
-              size="sm"
-              variant="secondary"
-              onClick={handleMergeSelected}
-              disabled={selectedPages.length === 0}
-              data-testid="merge-selected-btn"
-            >
-              <Package size={14} className="ml-2" />
-              تجميع الصفحات المحددة ({selectedPages.length})
-            </Button>
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={handleCreateIndividual}
-              disabled={selectedPages.length === 0}
-              data-testid="create-individual-btn"
-            >
-              <FileCheck size={14} className="ml-2" />
-              إنشاء فردي للصفحات المحددة
-            </Button>
-            <Button 
-              size="sm"
-              variant="secondary"
-              onClick={handleDownloadSelected}
-              disabled={selectedPages.length === 0}
-              data-testid="download-selected-btn"
-            >
-              <Download size={14} className="ml-2" />
-              تحميل المحددة
-            </Button>
-          </div>
-
-          {/* الصف الرابع: أزرار الإدارة والتنظيف */}
-          <div className="flex gap-2 pt-2 border-t flex-wrap">
-            <Button 
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowCleanupDialog(true)}
-            >
-              <Trash2 size={16} className="ml-2" />
-              مسح الملفات القديمة
-            </Button>
-            <Button 
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowCleanAllDialog(true)}
-            >
-              <RotateCcw size={16} className="ml-2" />
-              تنظيف التطبيق
-            </Button>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRestartDialog(true)}
-            >
-              <RefreshCw size={16} className="ml-2" />
-              إعادة تشغيل
+              <Sparkles size={18} className="ml-2" />
+              معالجة جميع الملفات
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* الجدول */}
-      {filteredPages.length === 0 ? (
-        <div className="card text-center py-12">
-          <FileText size={64} className="mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold mb-2">لا توجد نتائج</h3>
-          <p className="text-gray-500">لا توجد صفحات تطابق معايير البحث</p>
-        </div>
-      ) : (
-        <div className="card overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right w-12">
-                  <Checkbox
-                    checked={selectedPages.length === filteredPages.length && filteredPages.length > 0}
-                    onCheckedChange={handleSelectAll}
-                    data-testid="select-all-checkbox"
-                  />
-                </TableHead>
-                <TableHead className="text-right">الملف الأب</TableHead>
-                <TableHead className="text-right">رقم الصفحة</TableHead>
-                <TableHead className="text-right w-32">صورة ROI</TableHead>
-                <TableHead className="text-right">الكود</TableHead>
-                <TableHead className="text-right">الثقة</TableHead>
-                <TableHead className="text-right">الاسم (nom)</TableHead>
-                <TableHead className="text-right">الملف النهائي</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPages.map((page) => (
-                <TableRow key={page.id} data-testid={`page-row-${page.id}`}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedPages.includes(page.id)}
-                      onCheckedChange={() => handleSelectPage(page.id)}
-                      data-testid={`checkbox-${page.id}`}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{page.parentFile}</TableCell>
-                  <TableCell>{page.pageNumber}</TableCell>
-                  <TableCell>
-                    <div className="w-24 h-24 bg-gray-100 rounded border overflow-hidden">
-                      {page.thumbnail ? (
-                        <img
-                          src={`${API}/thumbnail/${page.thumbnail.split('/').pop()}`}
-                          alt="ROI"
-                          className="w-full h-full object-contain"
-                          onError={(e) => e.target.style.display = 'none'}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <FileText size={32} />
+        {/* Statistics */}
+        {statistics && (
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 size={20} />
+                <span className="text-sm opacity-90">ثقة عالية</span>
+              </div>
+              <p className="text-3xl font-bold">{statistics.high_confidence}</p>
+            </div>
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertCircle size={20} />
+                <span className="text-sm opacity-90">ثقة متوسطة</span>
+              </div>
+              <p className="text-3xl font-bold">{statistics.medium_confidence}</p>
+            </div>
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <XCircle size={20} />
+                <span className="text-sm opacity-90">ثقة منخفضة</span>
+              </div>
+              <p className="text-3xl font-bold">{statistics.low_confidence}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Results Table */}
+        {filteredPages.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+            <FileText size={64} className="mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-semibold mb-2 text-gray-700">لا توجد نتائج</h3>
+            <p className="text-gray-500">قم بتحديد ملفات لعرض صفحاتها</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50">
+                    <TableHead className="text-right font-bold">الملف</TableHead>
+                    <TableHead className="text-right font-bold">الصفحة</TableHead>
+                    <TableHead className="text-right font-bold">صورة ROI</TableHead>
+                    <TableHead className="text-right font-bold">الكود</TableHead>
+                    <TableHead className="text-right font-bold">الثقة</TableHead>
+                    <TableHead className="text-right font-bold">الاسم</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPages.map((page) => (
+                    <TableRow key={page.id} className="hover:bg-blue-50/50 transition-colors">
+                      <TableCell className="font-medium text-gray-700">{page.parentFile}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">
+                          {page.pageNumber}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden">
+                          {page.thumbnail ? (
+                            <img
+                              src={`${API}/thumbnail/${page.thumbnail.split('/').pop()}`}
+                              alt="ROI"
+                              className="w-full h-full object-contain"
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <FileText size={24} />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {editingCell === `${page.id}-code` ? (
-                      <Input
-                        value={page.code || ''}
-                        onChange={(e) => handleEditCell(page.id, 'code', e.target.value)}
-                        onBlur={() => handleCellBlur(page.id)}
-                        autoFocus
-                        className="w-24"
-                      />
-                    ) : (
-                      <div
-                        className="font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 p-1 rounded relative"
-                        onClick={() => setEditingCell(`${page.id}-code`)}
-                        data-testid={`code-cell-${page.id}`}
-                      >
-                        {page.code || '-'}
-                        {page.originalCode !== page.code && (
-                          <span className="text-xs text-orange-600 block">من: {page.originalCode}</span>
+                      </TableCell>
+                      <TableCell>
+                        {editingCell === `${page.id}-code` ? (
+                          <Input
+                            value={page.code || ''}
+                            onChange={(e) => handleEditCell(page.id, 'code', e.target.value)}
+                            onBlur={() => handleCellBlur(page.id)}
+                            autoFocus
+                            className="w-28 font-mono font-bold text-lg"
+                          />
+                        ) : (
+                          <div
+                            className="font-mono font-bold text-xl text-blue-600 cursor-pointer hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors"
+                            onClick={() => setEditingCell(`${page.id}-code`)}
+                          >
+                            {page.code || '-'}
+                            {savingChanges && page.isEdited && (
+                              <span className="text-xs text-green-600 ml-2">💾</span>
+                            )}
+                          </div>
                         )}
-                        {page.isEdited && savingChanges && (
-                          <span className="text-xs text-green-600 absolute -top-1 -left-1">💾</span>
+                      </TableCell>
+                      <TableCell>{getConfidenceBadge(page.confidence, page.confidenceLevel)}</TableCell>
+                      <TableCell>
+                        {editingCell === `${page.id}-nom` ? (
+                          <Input
+                            value={page.nom || ''}
+                            onChange={(e) => handleEditCell(page.id, 'nom', e.target.value)}
+                            onBlur={() => handleCellBlur(page.id)}
+                            autoFocus
+                            className="w-32"
+                          />
+                        ) : (
+                          <div
+                            className="cursor-pointer hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors font-medium"
+                            onClick={() => setEditingCell(`${page.id}-nom`)}
+                          >
+                            {page.nom || '-'}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{getConfidenceBadge(page.confidence, page.confidenceLevel)}</TableCell>
-                  <TableCell>
-                    {editingCell === `${page.id}-nom` ? (
-                      <Input
-                        value={page.nom || ''}
-                        onChange={(e) => handleEditCell(page.id, 'nom', e.target.value)}
-                        onBlur={() => handleCellBlur(page.id)}
-                        autoFocus
-                        className="w-32"
-                      />
-                    ) : (
-                      <div
-                        className="cursor-pointer hover:bg-blue-50 p-1 rounded relative"
-                        onClick={() => setEditingCell(`${page.id}-nom`)}
-                        data-testid={`nom-cell-${page.id}`}
-                      >
-                        {page.nom || '-'}
-                        {page.isEdited && savingChanges && (
-                          <span className="text-xs text-green-600 absolute -top-1 -left-1">💾</span>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {page.filename}
-                    <div className="text-xs text-gray-500">{page.pageCount} صفحات</div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Dialog: تأكيد مسح الملفات القديمة */}
-      <AlertDialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>مسح الملفات القديمة</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من حذف جميع الملفات الأقدم من 7 أيام؟ هذا الإجراء لا يمكن التراجع عنه.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCleanupOldFiles} className="bg-red-600 hover:bg-red-700">
-              تأكيد الحذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog: تأكيد تنظيف كل البيانات */}
-      <AlertDialog open={showCleanAllDialog} onOpenChange={setShowCleanAllDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>⚠️ تحذير: تنظيف شامل</AlertDialogTitle>
-            <AlertDialogDescription>
-              هذا الإجراء سيحذف:
-              <ul className="list-disc mr-6 mt-2">
-                <li>جميع الملفات المرفوعة</li>
-                <li>جميع ملفات النتائج</li>
-                <li>جميع بيانات التحليلات</li>
-              </ul>
-              <strong className="text-red-600 block mt-2">هذا الإجراء لا يمكن التراجع عنه!</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCleanAll} className="bg-red-600 hover:bg-red-700">
-              تأكيد التنظيف الشامل
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog: تأكيد إعادة التشغيل */}
-      <AlertDialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>إعادة تشغيل التطبيق</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم إعادة تشغيل التطبيق وستحتاج إلى تحديث الصفحة بعد بضع ثوانٍ. هل تريد المتابعة؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestartApp}>
-              إعادة التشغيل
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
