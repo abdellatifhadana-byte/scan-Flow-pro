@@ -385,11 +385,17 @@ class MergeByFilesRequest(BaseModel):
 async def update_page_data(update: PageUpdate):
     """تحديث بيانات صفحة وحفظها في قاعدة البيانات"""
     try:
-        # استخراج analysis_id من page_id إذا كان موجوداً
-        parts = update.page_id.split('-')
-        if len(parts) >= 2:
+        # استخراج file_id و page_num من page_id
+        # Format: {file_id}-{page_num}
+        parts = update.page_id.rsplit('-', 1)
+        if len(parts) == 2:
             file_id = parts[0]
-            page_num = int(parts[1]) if len(parts) > 1 else 0
+            try:
+                page_num = int(parts[1])
+            except ValueError:
+                # إذا فشل التحويل، نعتبر page_id كامل هو file_id
+                file_id = update.page_id
+                page_num = 0
             
             # البحث عن التحليل الذي يحتوي على هذا الملف
             analyses = await db.analyses.find({
