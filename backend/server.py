@@ -47,6 +47,7 @@ class ROIData(BaseModel):
 class FileConfig(BaseModel):
     file_id: str
     keyword: str
+    nom: str = ""
     code_roi: Optional[ROIData] = None
     keyword_roi: Optional[ROIData] = None
     rotation: int = 0
