@@ -171,10 +171,13 @@ class OCREngine:
             processed = self.preprocess_image(roi_image)
             
             text_tesseract = self.ocr_tesseract(processed)
-            text_easyocr_ar = self.ocr_easyocr(processed, use_arabic=True)
-            text_easyocr_fr = self.ocr_easyocr(processed, use_arabic=False)
             
-            combined_text = text_tesseract + " " + text_easyocr_ar + " " + text_easyocr_fr
+            combined_text = text_tesseract
+            
+            if self.use_easyocr:
+                text_easyocr_ar = self.ocr_easyocr(processed, use_arabic=True)
+                text_easyocr_fr = self.ocr_easyocr(processed, use_arabic=False)
+                combined_text += " " + text_easyocr_ar + " " + text_easyocr_fr
             
             keyword = config.get('keyword', '')
             code = self.extract_code_from_text(combined_text, keyword)
