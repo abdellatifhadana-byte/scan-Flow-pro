@@ -177,7 +177,6 @@ async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundT
     analysis_doc = {
         "analysis_id": analysis_id,
         "file_ids": request.file_ids,
-        "nom": request.nom,
         "merge_enabled": request.merge_enabled,
         "status": "processing",
         "progress": 0,
