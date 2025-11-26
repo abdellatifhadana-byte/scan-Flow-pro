@@ -215,6 +215,96 @@ const ResultsPage = () => {
     }
   };
 
+  const handleDownloadSelected = async () => {
+    if (selectedPages.length === 0) {
+      toast.error('الرجاء اختيار ملفات للتحميل');
+      return;
+    }
+
+    try {
+      toast.info('جاري تجهيز الملفات للتحميل...');
+      
+      const response = await axios.post(`${API}/download-selected`, {
+        analysis_id: analysisId,
+        page_ids: selectedPages
+      }, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'selected_files.zip');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('تم تحميل الملفات بنجاح!');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('خطأ في التحميل: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleCleanupOldFiles = async () => {
+    try {
+      toast.info('جاري حذف الملفات القديمة...');
+      
+      const response = await axios.delete(`${API}/cleanup/old-files`);
+      
+      toast.success(response.data.message);
+      setShowCleanupDialog(false);
+      loadResults();
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      toast.error('خطأ في الحذف: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleCleanAll = async () => {
+    try {
+      toast.info('جاري تنظيف جميع البيانات...');
+      
+      const response = await axios.delete(`${API}/cleanup/all`);
+      
+      toast.success(response.data.message);
+      setShowCleanAllDialog(false);
+      
+      // العودة للصفحة الرئيسية
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch (error) {
+      console.error('Clean all error:', error);
+      toast.error('خطأ في التنظيف: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleRestartApp = async () => {
+    try {
+      toast.info('جاري إعادة تشغيل التطبيق...');
+      
+      await axios.post(`${API}/system/restart`);
+      
+      toast.success('سيتم إعادة تشغيل التطبيق خلال ثوانٍ...');
+      setShowRestartDialog(false);
+      
+      // تحديث الصفحة بعد 5 ثواني
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+    } catch (error) {
+      console.error('Restart error:', error);
+      toast.error('خطأ في إعادة التشغيل: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const getUniqueFiles = () => {
+    const uniqueFiles = [...new Set(allPages.map(p => p.parentFile))];
+    return uniqueFiles;
+  };
+
   if (loading) {
     return (
       <div className="page-container" dir="rtl">
