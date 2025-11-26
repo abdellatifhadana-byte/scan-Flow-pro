@@ -387,8 +387,8 @@ const ResultsPage = () => {
             </div>
           )}
 
-          {/* الصف الثالث: أزرار الإجراءات */}
-          <div className="flex gap-2">
+          {/* الصف الثالث: أزرار الإجراءات الرئيسية */}
+          <div className="flex gap-2 flex-wrap">
             <Button 
               onClick={handleMergeSelected}
               disabled={selectedPages.length === 0}
@@ -413,6 +413,43 @@ const ResultsPage = () => {
             >
               <Files size={16} className="ml-2" />
               تجميع الكل
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={handleDownloadSelected}
+              disabled={selectedPages.length === 0}
+              data-testid="download-selected-btn"
+            >
+              <Download size={16} className="ml-2" />
+              تحميل المحددة
+            </Button>
+          </div>
+
+          {/* الصف الرابع: أزرار الإدارة والتنظيف */}
+          <div className="flex gap-2 pt-2 border-t flex-wrap">
+            <Button 
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowCleanupDialog(true)}
+            >
+              <Trash2 size={16} className="ml-2" />
+              مسح الملفات القديمة
+            </Button>
+            <Button 
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowCleanAllDialog(true)}
+            >
+              <RotateCcw size={16} className="ml-2" />
+              تنظيف التطبيق
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRestartDialog(true)}
+            >
+              <RefreshCw size={16} className="ml-2" />
+              إعادة تشغيل
             </Button>
           </div>
         </div>
