@@ -293,6 +293,9 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
                     "file_id": page.get('file_id', '')
                 })
         
+        # حساب الإحصائيات
+        stats = code_alignment.generate_statistics(aligned_pages)
+        
         await db.analyses.update_one(
             {"analysis_id": analysis_id},
             {
@@ -300,6 +303,7 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
                     "status": "completed",
                     "progress": 100,
                     "results": results,
+                    "statistics": stats,
                     "completed_at": datetime.now(timezone.utc).isoformat()
                 }
             }
