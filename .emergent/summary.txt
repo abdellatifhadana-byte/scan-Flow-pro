@@ -1,0 +1,313 @@
+<analysis>**original_problem_statement:**
+The user wants to build a full-stack application named ScanFlow Pro to automate the processing of multi-page PDF files.
+
+**PRODUCT REQUIREMENTS:**
+1.  **File Upload:** A page to upload multiple PDF files, delete them, and assign a special name () to each file for naming the final output.
+2.  **ROI Editor:** For each file, the user must be able to:
+    *   Define a Region of Interest (ROI) for a keyword and a code on a page preview.
+    *   The ROI coordinates should be saved as percentages to be resolution-independent.
+    *   The user can select a keyword from a list or add a new one.
+    *   The system should support auto-detection for keywords and codes.
+3.  **Analysis Engine:**
+    *   A progress page showing the status of the analysis for each file.
+    *   The backend should perform OCR (Tesseract or EasyOCR) on each page within the defined ROI.
+    *   It must find the specified keyword and then extract the code that follows it. The code is numeric, 4-8 digits.
+    *   Handle dependent pages (e.g., a main page has 2 subsequent pages associated with it).
+4.  **Smart Merging & Naming:**
+    *   Pages (from different original files) that share the same extracted code should be grouped.
+    *   The system should create a single merged PDF file for each unique code.
+    *   Individual pages and merged files must follow a specific naming convention:  for single pages and  for merged files.
+    *   All outputs for a given code should be stored in a dedicated folder, e.g., .
+5.  **Advanced Code Validation (Confidence System):**
+    *   Since codes are repeated across multiple files (e.g., page 1 of file A, B, and C have the same code), the system should implement a confidence score for each OCR extraction.
+    *   The code with the highest confidence (e.g., 100%) for a specific page position (e.g., page 1) should be considered the correct code for that position across all files.
+6.  **Interactive Results Page:**
+    *   Display all processed pages in a detailed, editable table.
+    *   The table should show: a thumbnail of the ROI, original file name, page number, extracted code, confidence score, and the final output file name.
+    *   Users must be able to edit the extracted code and output name directly in the table.
+    *   Provide filtering and sorting capabilities.
+    *   Include action buttons to:
+        *   Select specific pages and merge them into a single file.
+        *   Create individual output files for selected pages.
+        *   Merge All based on the grouping logic.
+
+**User's preferred language**: Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© (Arabic)
+
+**what currently exists?**
+A full-stack application (FastAPI backend, React frontend) named ScanFlow Pro has been developed. The application supports uploading PDF files, defining a Region of Interest (ROI) for code extraction, and initiating an analysis process. The backend uses Tesseract for OCR to extract codes based on keywords, groups them, and applies an advanced code alignment algorithm based on a confidence score. A sophisticated, interactive results page has been implemented, allowing users to view, filter, edit, and perform batch actions (merge, create individual files) on the extracted data. The backend APIs for these actions have been created and connected to the frontend buttons.
+
+**Last working item**:
+- Last item agent was working: The user asked for confirmation that the results page was fully implemented as per their detailed request and also asked how they could download the application to run on their own computer. The agent verified the frontend file () and then created a detailed installation guide (). The agent was about to package the project files into a zip archive for the user.
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? The agent should create a PK-©z[ÿÿÿÿÿÿÿÿ-PKPK-©z[¶!-PK/M archive of the  directory and provide it to the user. User will perform manual testing on their local machine.
+- User Testing Done: N
+
+**All Pending/In progress Issue list**:
+- Issue 1: Tesseract OCR dependency is not persistent. (P0)
+- Issue 2: Analysis fails to extract codes, showing 0 codes extracted. (P1)
+
+Issues Detail:
+- Issue 1:
+    - Attempted fixes: The agent has had to reinstall Tesseract OCR multiple times (Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libarchive13 libgif7 liblept5 libopenjp2-7 libpangocairo-1.0-0
+  libpangoft2-1.0-0 libtesseract5 libwebpmux3 tesseract-ocr-eng
+  tesseract-ocr-osd
+Suggested packages:
+  lrzip
+The following NEW packages will be installed:
+  libarchive13 libgif7 liblept5 libopenjp2-7 libpangocairo-1.0-0
+  libpangoft2-1.0-0 libtesseract5 libwebpmux3 tesseract-ocr tesseract-ocr-eng
+  tesseract-ocr-osd
+0 upgraded, 11 newly installed, 0 to remove and 0 not upgraded.
+Need to get 7769 kB of archives.
+After this operation, 25.7 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian bookworm/main arm64 libarchive13 arm64 3.6.2-1+deb12u3 [317 kB]
+Get:2 http://deb.debian.org/debian bookworm/main arm64 libgif7 arm64 5.2.1-2.5 [46.7 kB]
+Get:3 http://deb.debian.org/debian bookworm/main arm64 libopenjp2-7 arm64 2.5.0-2+deb12u2 [176 kB]
+Get:4 http://deb.debian.org/debian bookworm/main arm64 libwebpmux3 arm64 1.2.4-0.2+deb12u1 [109 kB]
+Get:5 http://deb.debian.org/debian bookworm/main arm64 liblept5 arm64 1.82.0-3+b3 [973 kB]
+Get:6 http://deb.debian.org/debian bookworm/main arm64 libpangoft2-1.0-0 arm64 1.50.12+ds-1 [44.5 kB]
+Get:7 http://deb.debian.org/debian bookworm/main arm64 libpangocairo-1.0-0 arm64 1.50.12+ds-1 [32.0 kB]
+Get:8 http://deb.debian.org/debian bookworm/main arm64 libtesseract5 arm64 5.3.0-2 [1123 kB]
+Get:9 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-eng all 1:4.1.0-2 [1594 kB]
+Get:10 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-osd all 1:4.1.0-2 [2992 kB]
+Get:11 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr arm64 5.3.0-2 [363 kB]
+Fetched 7769 kB in 0s (24.1 MB/s)
+Selecting previously unselected package libarchive13:arm64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 38368 files and directories currently installed.)
+Preparing to unpack .../00-libarchive13_3.6.2-1+deb12u3_arm64.deb ...
+Unpacking libarchive13:arm64 (3.6.2-1+deb12u3) ...
+Selecting previously unselected package libgif7:arm64.
+Preparing to unpack .../01-libgif7_5.2.1-2.5_arm64.deb ...
+Unpacking libgif7:arm64 (5.2.1-2.5) ...
+Selecting previously unselected package libopenjp2-7:arm64.
+Preparing to unpack .../02-libopenjp2-7_2.5.0-2+deb12u2_arm64.deb ...
+Unpacking libopenjp2-7:arm64 (2.5.0-2+deb12u2) ...
+Selecting previously unselected package libwebpmux3:arm64.
+Preparing to unpack .../03-libwebpmux3_1.2.4-0.2+deb12u1_arm64.deb ...
+Unpacking libwebpmux3:arm64 (1.2.4-0.2+deb12u1) ...
+Selecting previously unselected package liblept5:arm64.
+Preparing to unpack .../04-liblept5_1.82.0-3+b3_arm64.deb ...
+Unpacking liblept5:arm64 (1.82.0-3+b3) ...
+Selecting previously unselected package libpangoft2-1.0-0:arm64.
+Preparing to unpack .../05-libpangoft2-1.0-0_1.50.12+ds-1_arm64.deb ...
+Unpacking libpangoft2-1.0-0:arm64 (1.50.12+ds-1) ...
+Selecting previously unselected package libpangocairo-1.0-0:arm64.
+Preparing to unpack .../06-libpangocairo-1.0-0_1.50.12+ds-1_arm64.deb ...
+Unpacking libpangocairo-1.0-0:arm64 (1.50.12+ds-1) ...
+Selecting previously unselected package libtesseract5:arm64.
+Preparing to unpack .../07-libtesseract5_5.3.0-2_arm64.deb ...
+Unpacking libtesseract5:arm64 (5.3.0-2) ...
+Selecting previously unselected package tesseract-ocr-eng.
+Preparing to unpack .../08-tesseract-ocr-eng_1%3a4.1.0-2_all.deb ...
+Unpacking tesseract-ocr-eng (1:4.1.0-2) ...
+Selecting previously unselected package tesseract-ocr-osd.
+Preparing to unpack .../09-tesseract-ocr-osd_1%3a4.1.0-2_all.deb ...
+Unpacking tesseract-ocr-osd (1:4.1.0-2) ...
+Selecting previously unselected package tesseract-ocr.
+Preparing to unpack .../10-tesseract-ocr_5.3.0-2_arm64.deb ...
+Unpacking tesseract-ocr (5.3.0-2) ...
+Setting up libarchive13:arm64 (3.6.2-1+deb12u3) ...
+Setting up tesseract-ocr-eng (1:4.1.0-2) ...
+Setting up libgif7:arm64 (5.2.1-2.5) ...
+Setting up libopenjp2-7:arm64 (2.5.0-2+deb12u2) ...
+Setting up tesseract-ocr-osd (1:4.1.0-2) ...
+Setting up libpangoft2-1.0-0:arm64 (1.50.12+ds-1) ...
+Setting up libwebpmux3:arm64 (1.2.4-0.2+deb12u1) ...
+Setting up libpangocairo-1.0-0:arm64 (1.50.12+ds-1) ...
+Setting up liblept5:arm64 (1.82.0-3+b3) ...
+Setting up libtesseract5:arm64 (5.3.0-2) ...
+Setting up tesseract-ocr (5.3.0-2) ...
+Processing triggers for libc-bin (2.36-9+deb12u13) ...) after the environment was reset or resized. This indicates the installation is not part of the base environment image.
+    - Next debug checklist: Before any analysis task, run tesseract 5.3.0
+ leptonica-1.82.0
+  libgif 5.2.1 : libjpeg 6b (libjpeg-turbo 2.1.2) : libpng 1.6.39 : libtiff 4.5.0 : zlib 1.2.13 : libwebp 1.2.4 : libopenjp2 2.5.0
+ Found NEON
+ Found OpenMP 201511
+ Found libarchive 3.6.2 zlib/1.2.13 liblzma/5.4.1 bz2lib/1.0.8 liblz4/1.9.4 libzstd/1.5.4
+ Found libcurl/7.88.1 OpenSSL/3.0.17 zlib/1.2.13 brotli/1.0.9 zstd/1.5.4 libidn2/2.3.3 libpsl/0.21.2 (+libidn2/2.3.3) libssh2/1.10.0 nghttp2/1.52.0 librtmp/2.3 OpenLDAP/2.5.13 to ensure it's installed. If not, reinstall it. This is a recurring environmental issue, not a code bug.
+    - Why fix this issue and what will be achieved with the fix? The entire code extraction functionality depends on Tesseract. Without it, the application is non-functional.
+    - Status: IN PROGRESS (Workaround identified, but root cause is environmental)
+    - Is recurring issue? Y
+    - Should Test frontend/backend/both after fix? Backend (specifically the  endpoint).
+    - Blocked on other issue: None.
+
+- Issue 2:
+    - Attempted fixes:
+        1.  Initial failures were due to Tesseract not being installed (See Issue 1).
+        2.  Another failure was due to the user-defined ROI being too small and not containing the keyword, only the code. The agent modified  to add a fallback mechanism to directly extract numbers from a small ROI if the keyword is not found.
+    - Next debug checklist:
+        1.  Verify Tesseract is installed.
+        2.  Check the backend logs () during analysis for warnings like Failed to extract code.
+        3.  Ensure the user-defined ROI is large enough to contain both the keyword and the code. The  was created to instruct the user on this.
+    - Why fix this issue and what will be achieved with the fix? This is the core function of the application. Fixing it ensures the application can successfully extract data from the PDFs.
+    - Status: USER VERIFICATION PENDING
+    - Is recurring issue? Y
+    - Should Test frontend/backend/both after fix? Both.
+    - Blocked on other issue: Issue 1.
+
+**In progress Task List**:
+- Task 1: Package and provide the application for user download. (P0)
+
+Task Detail:
+- Task 1:
+    - Where to resume: The  file has been created. The next step is to create a zip archive of the project directory.
+    - What will be achieved with this? The user will be able to download and run the application on their local machine.
+    - Status: IN PROGRESS
+    - Should Test frontend/backend/both after fix? N/A
+    - Blocked on something: None.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks:**
+    - The agent needs to execute the final step of creating a PK-©z[ÿÿÿÿÿÿÿÿ-PKPK-©z[¶!-PK/M archive of the  directory so the user can download it. (P0)
+- **Future Tasks:**
+    - Replace the in-memory dictionary  in  with a persistent database solution (e.g., using the existing MongoDB) to store analysis results, file settings, and job statuses. This will prevent data loss on server restarts. (P1)
+
+**Completed work in this session**
+- **Backend:**
+    - Implemented file upload endpoint ().
+    - Created PDF processing logic () to convert PDF pages to images.
+    - Developed an OCR engine () using Tesseract with a confidence score system.
+    - Built an advanced code alignment algorithm () to validate codes across multiple files.
+    - Created API endpoints for analysis (), status checking, and fetching results ().
+    - Implemented action endpoints: , , , .
+    - Added an endpoint to serve ROI thumbnail images ().
+- **Frontend:**
+    - Created  for file uploads.
+    - Created  to allow users to define settings and ROIs for each file.
+    - Created  to show progress.
+    - Developed a highly interactive  with an editable table, filtering, and action buttons connected to the backend APIs.
+- **Documentation:**
+    - Created several markdown documents in Arabic: , , , , , , .
+
+**Earlier issues found/mentioned but not fixed**
+- The application's state (file lists, analysis results) is stored in an in-memory Python dictionary ( in ). This data is lost every time the backend server restarts. This is a critical architectural flaw for any real-world use.
+
+**Known issue recurrence from previous fork**
+- N/A
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend**: FastAPI
+-   **Frontend**: React
+-   **Database**: None (state is managed in-memory in a Python dictionary)
+-   **OCR**: Tesseract (via )
+-   **PDF Handling**: ,  (fitz)
+-   **Architecture**: Full-stack monolith with in-memory state management.
+
+**key DB schema**
+- **None.** The application currently uses a Python dictionary  in  as a temporary in-memory database. Data is not persistent.
+
+**changes in tech stack**
+- The agent initially planned to use  but switched to  only, due to  causing memory limit errors and pod termination.
+
+**All files**
+- **Backend Created/Modified:**
+    - : Main application logic, all API endpoints, and state management.
+    - : Handles OCR extraction and confidence scoring.
+    - : Manages conversion of PDF pages to images.
+    - : Implements the advanced logic for choosing the best code among multiple files.
+    - : Created but logic was implemented in  instead.
+- **Frontend Created/Modified:**
+    - : Sets up application routing.
+    - : UI for uploading files.
+    - : UI for setting file-specific name (), keyword, and ROI.
+    - : UI for showing analysis progress.
+    - : A complete rewrite to provide a detailed, interactive, and editable table for results with filtering and action buttons.
+- **Documentation:**
+    - , , , , , , .
+
+**Areas that need refactoring**:
+- The most critical area for refactoring is the state management in . The use of a global dictionary () for all job data is not scalable or persistent. This should be migrated to a proper database (like the available MongoDB) to ensure data integrity across server restarts and to handle concurrent requests properly.
+
+**key api endpoints**
+-   : Uploads PDF files.
+-   : Saves settings (ROI, keyword, nom) for a file.
+-   : Begins the OCR and code extraction process.
+-   : Gets the status of a running analysis.
+-   : Fetches the final, aligned results for the results page.
+-   : Updates the code or name for a specific page result.
+-   : Creates a merged PDF from selected pages.
+-   : Creates individual PDF files for selected pages.
+-   : Serves a thumbnail image of the ROI.
+
+**Critical Info for New Agent**
+1.  **Tesseract is NOT persistent**: The environment loses the Tesseract installation on reset. You **MUST** verify its installation with tesseract 5.3.0
+ leptonica-1.82.0
+  libgif 5.2.1 : libjpeg 6b (libjpeg-turbo 2.1.2) : libpng 1.6.39 : libtiff 4.5.0 : zlib 1.2.13 : libwebp 1.2.4 : libopenjp2 2.5.0
+ Found NEON
+ Found OpenMP 201511
+ Found libarchive 3.6.2 zlib/1.2.13 liblzma/5.4.1 bz2lib/1.0.8 liblz4/1.9.4 libzstd/1.5.4
+ Found libcurl/7.88.1 OpenSSL/3.0.17 zlib/1.2.13 brotli/1.0.9 zstd/1.5.4 libidn2/2.3.3 libpsl/0.21.2 (+libidn2/2.3.3) libssh2/1.10.0 nghttp2/1.52.0 librtmp/2.3 OpenLDAP/2.5.13 before running any analysis and reinstall it with Hit:1 http://deb.debian.org/debian bookworm InRelease
+Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+Hit:4 https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 InRelease
+Get:5 https://deb.nodesource.com/node_20.x nodistro InRelease [12.1 kB]
+Get:6 http://deb.debian.org/debian-security bookworm-security/main arm64 Packages [283 kB]
+Get:7 https://deb.nodesource.com/node_20.x nodistro/main arm64 Packages [13.0 kB]
+Fetched 412 kB in 1s (359 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+tesseract-ocr is already the newest version (5.3.0-2).
+The following NEW packages will be installed:
+  tesseract-ocr-ara tesseract-ocr-fra
+0 upgraded, 2 newly installed, 0 to remove and 1 not upgraded.
+Need to get 1177 kB of archives.
+After this operation, 2594 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-ara all 1:4.1.0-2 [647 kB]
+Get:2 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-fra all 1:4.1.0-2 [530 kB]
+Fetched 1177 kB in 0s (4050 kB/s)
+Selecting previously unselected package tesseract-ocr-ara.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 38503 files and directories currently installed.)
+Preparing to unpack .../tesseract-ocr-ara_1%3a4.1.0-2_all.deb ...
+Unpacking tesseract-ocr-ara (1:4.1.0-2) ...
+Selecting previously unselected package tesseract-ocr-fra.
+Preparing to unpack .../tesseract-ocr-fra_1%3a4.1.0-2_all.deb ...
+Unpacking tesseract-ocr-fra (1:4.1.0-2) ...
+Setting up tesseract-ocr-ara (1:4.1.0-2) ...
+Setting up tesseract-ocr-fra (1:4.1.0-2) ... if it's missing. This has been a recurring point of failure.
+2.  **In-Memory Database**: The entire application state (uploaded files, settings, analysis results) is stored in a Python dictionary in . If the backend restarts for any reason, all user progress is **lost**. This is the biggest architectural weakness.
+3.  **User Language**: The user communicates exclusively in **Arabic (Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©)**. All responses MUST be in Arabic.
+
+**documents created in this job**
+- /app/README.md
+- /app/GUIDE_AR.md
+- /app/TECHNICAL_DOCS.md
+- /app/TROUBLESHOOTING.md
+- /app/HOW_IT_WORKS.md
+- /app/ROI_GUIDE.md
+- /app/ADVANCED_FEATURES.md
+- /app/INSTALLATION.md
+
+**Last 5 User Messages and any pending user messages**
+1.  **User (Msg 259)**: Requested a major overhaul of the results page to be a fully interactive and editable table. They specified columns (ROI thumbnail, file name, page number, code, etc.), filtering, inline editing, and buttons for batch actions (merge selected, create individual, merge all).
+2.  **Agent (Msg 261-274)**: Implemented the new interactive results page on the frontend and added the corresponding APIs on the backend.
+3.  **User (Msg 285)**: Asked for confirmation that the new results page was implemented as requested and also asked how to download the application to run on their own computer.
+4.  **Agent (Msg 288-289)**: Confirmed the page was updated by viewing the file and then created a detailed  guide.
+5.  **Agent (Msg 290)**: Stated the intention to package the application files for the user. **(This is the pending action).**
+
+**Project Health Check:**
+- **Broken**:
+    - The OCR functionality is broken until Tesseract is manually re-installed in the container.
+    - The application state is not persistent, leading to data loss on any server restart.
+- **Mocked**: None.
+
+**Testing status**
+- Testing agent used after significant changes: NO
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: []
+- Known regressions: The primary function (OCR) will fail after every environment reset until Tesseract is reinstalled.
+
+**Credentials to test flow:**
+N/A
+
+**What agent forgot to execute**
+- The agent was tasked by the user to provide a way to download the application. While it created an  file, it did not perform the final, crucial step: creating a PK-©z[ÿÿÿÿÿÿÿÿ-PKPK-©z[¶!-PK/M archive of the  directory for the user to download.</analysis>
