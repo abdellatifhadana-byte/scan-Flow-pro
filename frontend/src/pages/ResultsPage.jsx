@@ -139,6 +139,53 @@ const ResultsPage = () => {
     ));
   };
 
+  const savePageChanges = async (pageId, updates) => {
+    try {
+      setSavingChanges(true);
+      
+      await axios.post(`${API}/update-page`, {
+        page_id: pageId,
+        code: updates.code,
+        nom: updates.nom
+      });
+      
+      toast.success('تم حفظ التغييرات تلقائياً');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('خطأ في حفظ التغييرات');
+    } finally {
+      setSavingChanges(false);
+    }
+  };
+
+  const handleCellBlur = (pageId) => {
+    const page = allPages.find(p => p.id === pageId);
+    if (page && page.isEdited) {
+      savePageChanges(pageId, {
+        code: page.code,
+        nom: page.nom
+      });
+    }
+    setEditingCell(null);
+  };
+
+  const handleSelectFile = (filename) => {
+    setSelectedFiles(prev => 
+      prev.includes(filename)
+        ? prev.filter(f => f !== filename)
+        : [...prev, filename]
+    );
+  };
+
+  const handleSelectAllFiles = () => {
+    const uniqueFiles = getUniqueFiles();
+    if (selectedFiles.length === uniqueFiles.length) {
+      setSelectedFiles([]);
+    } else {
+      setSelectedFiles(uniqueFiles);
+    }
+  };
+
   const getConfidenceBadge = (confidence, level) => {
     if (level === 'high' || confidence >= 80) {
       return <Badge className="bg-green-500 flex items-center gap-1"><CheckCircle2 size={14} /> عالية {confidence?.toFixed(0)}%</Badge>;
