@@ -25,7 +25,11 @@ const ResultsPage = () => {
   const [selectedPages, setSelectedPages] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [filterByFile, setFilterByFile] = useState('all');
   const [editingCell, setEditingCell] = useState(null);
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+  const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [showCleanAllDialog, setShowCleanAllDialog] = useState(false);
 
   useEffect(() => {
     loadResults();
