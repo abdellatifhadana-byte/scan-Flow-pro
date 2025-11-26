@@ -170,6 +170,11 @@ const ROIEditor = () => {
       toast.error('الرجاء إدخال الكلمة المفتاحية');
       return;
     }
+    
+    if (!nom.trim()) {
+      toast.error('الرجاء إدخال الاسم (nom) للملف');
+      return;
+    }
 
     try {
       if (!keywords.includes(keyword)) {
@@ -179,6 +184,7 @@ const ROIEditor = () => {
       await axios.post(`${API}/files/${fileId}/config`, {
         file_id: fileId,
         keyword: keyword,
+        nom: nom,
         code_roi: codeROI,
         keyword_roi: keywordROI,
         rotation: rotation,
