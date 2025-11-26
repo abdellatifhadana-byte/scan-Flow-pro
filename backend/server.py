@@ -398,6 +398,7 @@ class MergeByFilesRequest(BaseModel):
     analysis_id: str
     parent_files: List[str]  # قائمة بأسماء الملفات الأب
     merge_type: str  # "merge" or "individual"
+    custom_nom: Optional[str] = None  # الاسم المخصص للملفات المدمجة
 
 @api_router.post("/update-page")
 async def update_page_data(update: PageUpdate):
