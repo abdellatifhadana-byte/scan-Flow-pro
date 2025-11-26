@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 class OCREngine:
     def __init__(self):
         self.tesseract_langs = 'ara+fra+eng'
-        self.easyocr_reader = easyocr.Reader(['ar', 'fr', 'en'], gpu=False)
+        self.easyocr_reader_ar = easyocr.Reader(['ar', 'en'], gpu=False)
+        self.easyocr_reader_fr = easyocr.Reader(['fr', 'en'], gpu=False)
     
     def preprocess_image(self, image: np.ndarray) -> np.ndarray:
         """معالجة الصورة لتحسين دقة OCR"""
