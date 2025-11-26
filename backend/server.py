@@ -668,10 +668,16 @@ async def merge_all_smart(request: MergeAllSmartRequest):
                 
                 pages_to_merge = []
                 for page in pages:
-                    file_id = page.get('file_id')
-                    if file_id and file_id in files_map:
+                    # Try file_id first, then filename
+                    source_path = None
+                    if page.get('file_id') and page.get('file_id') in fileid_to_path:
+                        source_path = fileid_to_path[page.get('file_id')]
+                    elif page.get('source_filename') and page.get('source_filename') in filename_to_path:
+                        source_path = filename_to_path[page.get('source_filename')]
+                    
+                    if source_path:
                         pages_to_merge.append({
-                            'source_path': files_map[file_id],
+                            'source_path': source_path,
                             'page_num': page.get('source_page', 0)
                         })
                 
