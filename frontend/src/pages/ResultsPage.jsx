@@ -668,19 +668,22 @@ const ResultsPage = () => {
                       <Input
                         value={page.code || ''}
                         onChange={(e) => handleEditCell(page.id, 'code', e.target.value)}
-                        onBlur={() => setEditingCell(null)}
+                        onBlur={() => handleCellBlur(page.id)}
                         autoFocus
                         className="w-24"
                       />
                     ) : (
                       <div
-                        className="font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 p-1 rounded"
+                        className="font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 p-1 rounded relative"
                         onClick={() => setEditingCell(`${page.id}-code`)}
                         data-testid={`code-cell-${page.id}`}
                       >
                         {page.code || '-'}
                         {page.originalCode !== page.code && (
                           <span className="text-xs text-orange-600 block">من: {page.originalCode}</span>
+                        )}
+                        {page.isEdited && savingChanges && (
+                          <span className="text-xs text-green-600 absolute -top-1 -left-1">💾</span>
                         )}
                       </div>
                     )}
@@ -691,17 +694,20 @@ const ResultsPage = () => {
                       <Input
                         value={page.nom || ''}
                         onChange={(e) => handleEditCell(page.id, 'nom', e.target.value)}
-                        onBlur={() => setEditingCell(null)}
+                        onBlur={() => handleCellBlur(page.id)}
                         autoFocus
                         className="w-32"
                       />
                     ) : (
                       <div
-                        className="cursor-pointer hover:bg-blue-50 p-1 rounded"
+                        className="cursor-pointer hover:bg-blue-50 p-1 rounded relative"
                         onClick={() => setEditingCell(`${page.id}-nom`)}
                         data-testid={`nom-cell-${page.id}`}
                       >
                         {page.nom || '-'}
+                        {page.isEdited && savingChanges && (
+                          <span className="text-xs text-green-600 absolute -top-1 -left-1">💾</span>
+                        )}
                       </div>
                     )}
                   </TableCell>
