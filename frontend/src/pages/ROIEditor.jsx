@@ -277,7 +277,7 @@ const ROIEditor = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">الكلمة المفتاحية</label>
+              <label className="block text-sm font-semibold mb-2">الكلمة/الجملة المفتاحية</label>
               <Select value={keyword} onValueChange={setKeyword}>
                 <SelectTrigger data-testid="keyword-select">
                   <SelectValue placeholder="اختر أو أدخل كلمة" />
@@ -292,10 +292,27 @@ const ROIEditor = () => {
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="أو أدخل كلمة جديدة"
+                placeholder='مثال: "القطعة رقم" أو "Code"'
                 className="mt-2"
                 data-testid="keyword-input"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                الجملة التي تأتي قبل الكود مباشرة
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">الاسم (nom) *</label>
+              <Input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                placeholder="مثال: PV-AQUIESSEMENT"
+                data-testid="nom-input"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                الاسم الذي سيُستخدم في تسمية الصفحات المستخرجة من هذا الملف
+              </p>
             </div>
 
             <div className="mb-4">
