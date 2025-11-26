@@ -53,6 +53,7 @@ const ROIEditor = () => {
       
       if (fileData?.config) {
         setKeyword(fileData.config.keyword || '');
+        setNom(fileData.config.nom || '');
         setRotation(fileData.config.rotation || 0);
         setCodeROI(fileData.config.code_roi);
         setKeywordROI(fileData.config.keyword_roi);
