@@ -77,6 +77,33 @@ const ResultsPage = () => {
     setPreviewFile(result);
   };
 
+  const getConfidenceBadge = (confidence, level) => {
+    if (level === 'high' || confidence >= 80) {
+      return <Badge className="bg-green-500"><CheckCircle2 size={14} className="ml-1" /> عالية {confidence?.toFixed(0)}%</Badge>;
+    } else if (level === 'medium' || confidence >= 50) {
+      return <Badge className="bg-yellow-500"><AlertCircle size={14} className="ml-1" /> متوسطة {confidence?.toFixed(0)}%</Badge>;
+    } else {
+      return <Badge className="bg-red-500"><XCircle size={14} className="ml-1" /> منخفضة {confidence?.toFixed(0)}%</Badge>;
+    }
+  };
+
+  const handleDownloadAll = async (code) => {
+    try {
+      toast.info(`جاري تحضير ملفات الكود ${code}...`);
+      
+      const filesInCode = groupedResults[code] || [];
+      
+      for (const file of filesInCode) {
+        await handleDownload(file.code, file.filename);
+        await new Promise(resolve => setTimeout(resolve, 500)); // تأخير بسيط بين التحميلات
+      }
+      
+      toast.success(`تم تحميل جميع ملفات الكود ${code}`);
+    } catch (error) {
+      toast.error('خطأ في تحميل الملفات');
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container" dir="rtl">
