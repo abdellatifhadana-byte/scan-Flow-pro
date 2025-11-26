@@ -94,6 +94,11 @@ const ResultsPage = () => {
       });
     }
 
+    // الفلترة حسب الملف
+    if (filterByFile !== 'all') {
+      filtered = filtered.filter(page => page.parentFile === filterByFile);
+    }
+
     // الفلترة حسب النوع
     if (filterType !== 'all') {
       filtered = filtered.filter(page => {
