@@ -124,10 +124,38 @@ const AnalysisPage = () => {
           )}
         </div>
 
+        {/* Current Processing */}
+        {analysis?.status === 'extracting' && analysis.current_file && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+              <Loader2 className="animate-spin text-blue-600" size={24} />
+              جاري المعالجة...
+            </h3>
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200">
+              <div className="grid gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">الملف الحالي:</p>
+                  <p className="font-bold text-lg text-gray-800">{analysis.current_file}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">الصفحة:</p>
+                  <p className="font-mono font-bold text-2xl text-blue-600">{analysis.current_page || 0}</p>
+                </div>
+                {analysis.current_code && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">الكود المستخرج:</p>
+                    <p className="font-mono font-bold text-3xl text-purple-600">{analysis.current_code}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Processing Details */}
         {analysis?.results && analysis.results.length > 0 && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">التفاصيل المعالجة</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">آخر الصفحات المعالجة</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
               {analysis.results.slice(-9).reverse().map((result, index) => (
                 <div
@@ -144,11 +172,11 @@ const AnalysisPage = () => {
                         <Hash size={14} />
                         <span>صفحة {result.source_page + 1}</span>
                       </div>
-                      {result.aligned_code && (
+                      {(result.aligned_code || result.code) && (
                         <div className="bg-white rounded-lg px-3 py-2 mt-2">
-                          <p className="text-xs text-gray-500 mb-1">الكود المستخرج:</p>
+                          <p className="text-xs text-gray-500 mb-1">الكود:</p>
                           <p className="font-mono font-bold text-lg text-blue-600">
-                            {result.aligned_code}
+                            {result.aligned_code || result.code}
                           </p>
                         </div>
                       )}
