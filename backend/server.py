@@ -38,6 +38,7 @@ RESULTS_DIR.mkdir(exist_ok=True)
 ocr_engine = OCREngine(use_easyocr=False)
 pdf_processor = PDFProcessor()
 smart_merge = SmartMerge()
+code_alignment = CodeAlignment()
 
 class ROIData(BaseModel):
     x: float
