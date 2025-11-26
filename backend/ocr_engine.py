@@ -264,9 +264,9 @@ class OCREngine:
             logger.error(traceback.format_exc())
             return None, 0, None
     
-    def process_pdf(self, file_path: str, config: Dict, nom: str) -> Dict[str, List]:
-        """معالجة ملف PDF كامل"""
-        codes_data = {}
+    def process_pdf(self, file_path: str, config: Dict, nom: str, file_id: str) -> List[Dict]:
+        """معالجة ملف PDF كامل - يرجع قائمة بمعلومات كل صفحة"""
+        pages_data = []
         
         try:
             doc = fitz.open(file_path)
@@ -277,30 +277,29 @@ class OCREngine:
             
             page_num = 0
             while page_num < total_pages:
-                code = self.process_page(file_path, page_num, config)
+                code, confidence, thumbnail = self.process_page(file_path, page_num, config)
                 
-                if code:
-                    if code not in codes_data:
-                        codes_data[code] = []
-                    
-                    pages_to_include = [page_num]
-                    for i in range(1, pages_per_code):
-                        if page_num + i < total_pages:
-                            pages_to_include.append(page_num + i)
-                    
-                    for p in pages_to_include:
-                        codes_data[code].append({
-                            'source_path': file_path,
-                            'page_num': p,
-                            'code': code,
-                            'nom': nom
-                        })
-                    
-                    page_num += len(pages_to_include)
-                else:
-                    page_num += 1
+                page_info = {
+                    'file_id': file_id,
+                    'source_path': file_path,
+                    'page_num': page_num,
+                    'code': code,
+                    'confidence': confidence,
+                    'thumbnail': thumbnail,
+                    'nom': nom,
+                    'is_main': True,  # الصفحة الرئيسية
+                    'dependent_pages': []
+                }
+                
+                # إضافة الصفحات التابعة
+                for i in range(1, pages_per_code):
+                    if page_num + i < total_pages:
+                        page_info['dependent_pages'].append(page_num + i)
+                
+                pages_data.append(page_info)
+                page_num += pages_per_code
         
         except Exception as e:
             logger.error(f"Error processing PDF {file_path}: {str(e)}")
         
-        return codes_data
+        return pages_data
