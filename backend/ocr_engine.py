@@ -167,6 +167,8 @@ class OCREngine:
     def process_page(self, pdf_path: str, page_num: int, config: Dict) -> Optional[str]:
         """معالجة صفحة واحدة واستخراج الكود"""
         try:
+            logger.info(f"Processing page {page_num} from {pdf_path}")
+            
             doc = fitz.open(pdf_path)
             page = doc[page_num]
             
@@ -174,17 +176,24 @@ class OCREngine:
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
             
+            logger.info(f"Image size: {image.shape}")
+            
             if config.get('rotation', 0) != 0:
                 image = self.rotate_image(image, config['rotation'])
+                logger.info(f"Rotated image by {config['rotation']} degrees")
             
             if config.get('code_roi'):
                 roi_image = self.extract_roi(image, config['code_roi'])
+                logger.info(f"Extracted ROI, size: {roi_image.shape}")
             else:
                 roi_image = image
+                logger.info("Using full page (no ROI)")
             
             processed = self.preprocess_image(roi_image)
+            logger.info("Image preprocessing completed")
             
             text_tesseract = self.ocr_tesseract(processed)
+            logger.info(f"Tesseract OCR result length: {len(text_tesseract)}")
             
             combined_text = text_tesseract
             
@@ -192,15 +201,24 @@ class OCREngine:
                 text_easyocr_ar = self.ocr_easyocr(processed, use_arabic=True)
                 text_easyocr_fr = self.ocr_easyocr(processed, use_arabic=False)
                 combined_text += " " + text_easyocr_ar + " " + text_easyocr_fr
+                logger.info("EasyOCR completed")
             
             keyword = config.get('keyword', '')
             code = self.extract_code_from_text(combined_text, keyword)
             
             doc.close()
+            
+            if code:
+                logger.info(f"✓ Successfully extracted code: {code} from page {page_num}")
+            else:
+                logger.warning(f"✗ Failed to extract code from page {page_num}")
+            
             return code
         
         except Exception as e:
             logger.error(f"Error processing page {page_num} of {pdf_path}: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
     
     def process_pdf(self, file_path: str, config: Dict, nom: str) -> Dict[str, List]:
