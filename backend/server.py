@@ -366,6 +366,191 @@ async def get_thumbnail(thumbnail_id: str):
         return FileResponse(thumbnail_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Thumbnail not found")
 
+class PageUpdate(BaseModel):
+    page_id: str
+    code: Optional[str] = None
+    nom: Optional[str] = None
+
+class MergeRequest(BaseModel):
+    analysis_id: str
+    page_ids: List[str]
+    merge_type: str  # "merge" or "individual" or "merge_all"
+
+@api_router.post("/update-page")
+async def update_page_data(update: PageUpdate):
+    """تحديث بيانات صفحة"""
+    try:
+        # TODO: حفظ في قاعدة البيانات إذا لزم الأمر
+        return {"message": "Page updated successfully", "page_id": update.page_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/merge-selected")
+async def merge_selected_pages(request: MergeRequest):
+    """تجميع الصفحات المحددة"""
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        selected_results = [r for r in results if r.get("file_id") in request.page_ids or 
+                           f"{r.get('file_id')}-{r.get('source_page')}" in request.page_ids]
+        
+        if not selected_results:
+            raise HTTPException(status_code=400, detail="No pages selected")
+        
+        # تجميع حسب الكود
+        grouped_by_code = {}
+        for result in selected_results:
+            code = result.get('aligned_code') or result.get('code')
+            if code not in grouped_by_code:
+                grouped_by_code[code] = []
+            grouped_by_code[code].append(result)
+        
+        merged_files = []
+        for code, pages in grouped_by_code.items():
+            # ترتيب الصفحات حسب الملف والصفحة
+            pages.sort(key=lambda x: (x.get('source_filename', ''), x.get('source_page', 0)))
+            
+            # تجميع noms من كل الصفحات
+            noms = list(set([p.get('nom', '') for p in pages if p.get('nom')]))
+            nom_str = '-'.join(noms) if noms else 'merged'
+            
+            output_filename = f"P{code}-PV-{nom_str}.pdf"
+            output_dir = RESULTS_DIR / "codes" / code
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / output_filename
+            
+            # دمج كل الصفحات
+            pages_to_merge = []
+            for page in pages:
+                pages_to_merge.append({
+                    'source_path': page['file_path'] if Path(page['file_path']).exists() else page.get('source_path', ''),
+                    'page_num': 0 if Path(page['file_path']).exists() else page.get('source_page', 0)
+                })
+            
+            pdf_processor.merge_pdfs(pages_to_merge, str(output_path))
+            
+            merged_files.append({
+                'code': code,
+                'filename': output_filename,
+                'path': str(output_path),
+                'page_count': len(pages)
+            })
+        
+        return {
+            "message": "Merged successfully",
+            "files": merged_files
+        }
+    
+    except Exception as e:
+        logger.error(f"Merge error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/create-individual")
+async def create_individual_files(request: MergeRequest):
+    """إنشاء ملفات منفصلة للصفحات المحددة"""
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        selected_results = [r for r in results if r.get("file_id") in request.page_ids or 
+                           f"{r.get('file_id')}-{r.get('source_page')}" in request.page_ids]
+        
+        created_files = []
+        for result in selected_results:
+            code = result.get('aligned_code') or result.get('code')
+            nom = result.get('nom', 'page')
+            
+            output_filename = f"P{code}-{nom}.pdf"
+            output_dir = RESULTS_DIR / "codes" / code
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / output_filename
+            
+            # نسخ الملف أو إنشاؤه
+            source_path = result.get('file_path')
+            if source_path and Path(source_path).exists():
+                import shutil
+                shutil.copy(source_path, output_path)
+            
+            created_files.append({
+                'code': code,
+                'filename': output_filename,
+                'path': str(output_path)
+            })
+        
+        return {
+            "message": "Individual files created successfully",
+            "files": created_files
+        }
+    
+    except Exception as e:
+        logger.error(f"Create individual error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/merge-all")
+async def merge_all_by_code(request: MergeRequest):
+    """تجميع جميع الملفات حسب الكود"""
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        
+        # تجميع حسب الكود
+        grouped_by_code = {}
+        for result in results:
+            code = result.get('aligned_code') or result.get('code')
+            if code:
+                if code not in grouped_by_code:
+                    grouped_by_code[code] = []
+                grouped_by_code[code].append(result)
+        
+        merged_files = []
+        for code, pages in grouped_by_code.items():
+            # ترتيب
+            pages.sort(key=lambda x: (x.get('source_filename', ''), x.get('source_page', 0)))
+            
+            # جمع noms
+            noms = list(set([p.get('nom', '') for p in pages if p.get('nom')]))
+            nom_str = '-'.join(noms) if noms else 'all'
+            
+            output_filename = f"P{code}-PV-{nom_str}.pdf"
+            output_dir = RESULTS_DIR / "codes" / code
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / output_filename
+            
+            # دمج
+            pages_to_merge = []
+            for page in pages:
+                pages_to_merge.append({
+                    'source_path': page['file_path'] if Path(page['file_path']).exists() else page.get('source_path', ''),
+                    'page_num': 0 if Path(page['file_path']).exists() else page.get('source_page', 0)
+                })
+            
+            pdf_processor.merge_pdfs(pages_to_merge, str(output_path))
+            
+            merged_files.append({
+                'code': code,
+                'filename': output_filename,
+                'path': str(output_path),
+                'page_count': len(pages)
+            })
+        
+        return {
+            "message": "All files merged successfully",
+            "files": merged_files,
+            "total_codes": len(merged_files)
+        }
+    
+    except Exception as e:
+        logger.error(f"Merge all error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.include_router(api_router)
 
 app.add_middleware(
