@@ -378,11 +378,51 @@ class MergeRequest(BaseModel):
 
 @api_router.post("/update-page")
 async def update_page_data(update: PageUpdate):
-    """تحديث بيانات صفحة"""
+    """تحديث بيانات صفحة وحفظها في قاعدة البيانات"""
     try:
-        # TODO: حفظ في قاعدة البيانات إذا لزم الأمر
+        # استخراج analysis_id من page_id إذا كان موجوداً
+        parts = update.page_id.split('-')
+        if len(parts) >= 2:
+            file_id = parts[0]
+            page_num = int(parts[1]) if len(parts) > 1 else 0
+            
+            # البحث عن التحليل الذي يحتوي على هذا الملف
+            analyses = await db.analyses.find({
+                "results": {
+                    "$elemMatch": {
+                        "file_id": file_id,
+                        "source_page": page_num
+                    }
+                }
+            }).to_list(10)
+            
+            # تحديث كل التحليلات التي تحتوي على هذه الصفحة
+            for analysis in analyses:
+                results = analysis.get("results", [])
+                updated = False
+                
+                for i, result in enumerate(results):
+                    if result.get("file_id") == file_id and result.get("source_page") == page_num:
+                        if update.code is not None:
+                            results[i]["aligned_code"] = update.code
+                            results[i]["code"] = update.code
+                            updated = True
+                        if update.nom is not None:
+                            results[i]["nom"] = update.nom
+                            # تحديث اسم الملف أيضاً
+                            code = results[i].get("aligned_code") or results[i].get("code")
+                            results[i]["filename"] = f"P{code}-{update.nom}.pdf"
+                            updated = True
+                
+                if updated:
+                    await db.analyses.update_one(
+                        {"analysis_id": analysis["analysis_id"]},
+                        {"$set": {"results": results}}
+                    )
+        
         return {"message": "Page updated successfully", "page_id": update.page_id}
     except Exception as e:
+        logger.error(f"Update page error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/merge-selected")
