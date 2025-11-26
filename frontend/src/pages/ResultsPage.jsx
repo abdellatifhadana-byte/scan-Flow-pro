@@ -27,7 +27,24 @@ const ResultsPage = () => {
   const loadResults = async () => {
     try {
       const response = await axios.get(`${API}/results/${analysisId}`);
-      setResults(response.data.results || []);
+      const resultsData = response.data.results || [];
+      setResults(resultsData);
+      
+      // تجميع النتائج حسب الكود
+      const grouped = resultsData.reduce((acc, result) => {
+        const code = result.code || result.aligned_code;
+        if (!acc[code]) {
+          acc[code] = [];
+        }
+        acc[code].push(result);
+        return acc;
+      }, {});
+      setGroupedResults(grouped);
+      
+      // تحميل الإحصائيات
+      const analysisResponse = await axios.get(`${API}/analysis/${analysisId}`);
+      setStatistics(analysisResponse.data.statistics);
+      
       setLoading(false);
     } catch (error) {
       toast.error('خطأ في تحميل النتائج');
