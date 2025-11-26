@@ -242,28 +242,56 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
         
         grouped_by_code = code_alignment.group_by_code(aligned_pages)
         
+        # المرحلة 4: إنشاء الملفات
+        await db.analyses.update_one(
+            {"analysis_id": analysis_id},
+            {"$set": {"progress": 85, "status": "creating_files"}}
+        )
+        
         results = []
-        if request.merge_enabled:
-            results = smart_merge.merge_by_code(all_codes)
-        else:
-            for code, pages in all_codes.items():
-                for page_data in pages:
-                    nom = page_data.get("nom", "")
-                    output_path = RESULTS_DIR / "codes" / code / f"P{code}-{nom}.pdf"
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    
+        
+        for code, pages in grouped_by_code.items():
+            code_dir = RESULTS_DIR / "codes" / code
+            code_dir.mkdir(parents=True, exist_ok=True)
+            
+            for page in pages:
+                nom = page.get("nom", "")
+                output_filename = f"P{code}-{nom}.pdf"
+                output_path = code_dir / output_filename
+                
+                # إنشاء PDF يحتوي على الصفحة الرئيسية والصفحات التابعة
+                pages_to_include = [page['page_num']] + page.get('dependent_pages', [])
+                
+                if len(pages_to_include) == 1:
+                    # صفحة واحدة
                     pdf_processor.save_page_as_pdf(
-                        page_data["source_path"],
-                        page_data["page_num"],
+                        page["source_path"],
+                        page["page_num"],
                         str(output_path)
                     )
-                    
-                    results.append({
-                        "code": code,
-                        "filename": output_path.name,
-                        "file_path": str(output_path),
-                        "page_count": 1
-                    })
+                else:
+                    # صفحات متعددة
+                    pages_info = [
+                        {"source_path": page["source_path"], "page_num": p}
+                        for p in pages_to_include
+                    ]
+                    pdf_processor.merge_pdfs(pages_info, str(output_path))
+                
+                results.append({
+                    "code": code,
+                    "aligned_code": page['aligned_code'],
+                    "original_code": page.get('original_code'),
+                    "confidence": page['aligned_confidence'],
+                    "confidence_level": page.get('confidence_level'),
+                    "filename": output_filename,
+                    "file_path": str(output_path),
+                    "page_count": len(pages_to_include),
+                    "source_filename": page.get('source_filename', ''),
+                    "source_page": page['page_num'],
+                    "nom": nom,
+                    "thumbnail": page.get('thumbnail', ''),
+                    "file_id": page.get('file_id', '')
+                })
         
         await db.analyses.update_one(
             {"analysis_id": analysis_id},
