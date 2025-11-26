@@ -249,7 +249,8 @@ class OCREngine:
                         codes_data[code].append({
                             'source_path': file_path,
                             'page_num': p,
-                            'code': code
+                            'code': code,
+                            'nom': nom
                         })
                     
                     page_num += len(pages_to_include)
