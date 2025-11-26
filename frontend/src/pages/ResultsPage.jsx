@@ -195,13 +195,14 @@ const ResultsPage = () => {
     try {
       toast.info('جاري معالجة جميع الملفات...');
       
-      const response = await axios.post(`${API}/merge-all`, {
+      // إرسال الملفات المحددة مع الاسم المخصص
+      const response = await axios.post(`${API}/merge-all-smart`, {
         analysis_id: analysisId,
-        page_ids: [],
-        merge_type: 'merge_all'
+        selected_files: selectedFiles,
+        custom_nom: mergeNom || null
       });
       
-      toast.success(`✓ تم المعالجة بنجاح!`);
+      toast.success(`✓ ${response.data.message}`);
       loadResults();
     } catch (error) {
       console.error('Merge all error:', error);
