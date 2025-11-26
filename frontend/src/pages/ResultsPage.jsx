@@ -118,14 +118,36 @@ const ResultsPage = () => {
     <div className="page-container" dir="rtl">
       <div className="page-header">
         <h1 className="page-title">نتائج التحليل</h1>
-        <p className="page-subtitle">تم استخراج {results.length} كود</p>
+        <p className="page-subtitle">تم استخراج {Object.keys(groupedResults).length} كود من {results.length} ملف</p>
       </div>
 
-      <div className="card mb-4">
-        <Button variant="outline" onClick={() => navigate('/')}>
-          <ArrowRight size={16} className="ml-2" />
-          العودة للبداية
-        </Button>
+      <div className="flex gap-4 mb-4">
+        <div className="card flex-1">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            <ArrowRight size={16} className="ml-2" />
+            العودة للبداية
+          </Button>
+        </div>
+        
+        {statistics && (
+          <div className="card flex-1">
+            <h3 className="text-sm font-semibold mb-2">إحصائيات الثقة</h3>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <CheckCircle2 size={16} className="text-green-500" />
+                <span>عالية: {statistics.high_confidence}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <AlertCircle size={16} className="text-yellow-500" />
+                <span>متوسطة: {statistics.medium_confidence}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <XCircle size={16} className="text-red-500" />
+                <span>منخفضة: {statistics.low_confidence}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {results.length === 0 ? (
@@ -135,50 +157,97 @@ const ResultsPage = () => {
           <p className="text-gray-500">لم يتم استخراج أي أكواد من الملفات</p>
         </div>
       ) : (
-        <div className="card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">الكود</TableHead>
-                <TableHead className="text-right">عدد الصفحات</TableHead>
-                <TableHead className="text-right">اسم المللف</TableHead>
-                <TableHead className="text-right">الإجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {results.map((result, index) => (
-                <TableRow key={index} data-testid={`result-row-${result.code}`}>
-                  <TableCell className="font-mono font-bold text-blue-600">
-                    {result.code}
-                  </TableCell>
-                  <TableCell>{result.page_count}</TableCell>
-                  <TableCell className="font-medium">{result.filename}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePreview(result)}
-                        data-testid={`preview-btn-${result.code}`}
-                      >
-                        <Eye size={16} className="ml-1" />
-                        معاينة
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(result.code, result.filename)}
-                        data-testid={`download-btn-${result.code}`}
-                      >
-                        <Download size={16} className="ml-1" />
-                        تحميل
-                      </Button>
+        <div className="space-y-6">
+          {Object.entries(groupedResults).map(([code, files]) => (
+            <div key={code} className="card" data-testid={`code-group-${code}`}>
+              <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-blue-600">الكود: {code}</h2>
+                  <Badge variant="outline">{files.length} ملف</Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownloadAll(code)}
+                  data-testid={`download-all-${code}`}
+                >
+                  <Package size={16} className="ml-2" />
+                  تحميل الكل
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {files.map((result, idx) => (
+                  <div
+                    key={idx}
+                    className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    data-testid={`result-item-${code}-${idx}`}
+                  >
+                    {/* صورة مصغرة */}
+                    <div className="w-24 h-24 bg-white rounded border overflow-hidden flex-shrink-0">
+                      {result.thumbnail ? (
+                        <img
+                          src={`${API}/thumbnail/${result.thumbnail.split('/').pop()}`}
+                          alt="ROI"
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="w-full h-full flex items-center justify-center text-gray-400" style={{display: result.thumbnail ? 'none' : 'flex'}}>
+                        <FileText size={32} />
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+
+                    {/* المعلومات */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-bold text-lg">{result.filename}</h3>
+                          <p className="text-sm text-gray-600">
+                            الملف الأب: {result.source_filename} • الصفحة: {result.source_page + 1}
+                          </p>
+                        </div>
+                        {getConfidenceBadge(result.confidence, result.confidence_level)}
+                      </div>
+
+                      <div className="flex gap-4 text-sm text-gray-600 mb-3">
+                        <span>📄 {result.page_count} صفحة</span>
+                        <span>📝 {result.nom}</span>
+                        {result.original_code !== result.aligned_code && (
+                          <span className="text-orange-600">
+                            ⚠️ تم التعديل من: {result.original_code}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreview(result)}
+                          data-testid={`preview-btn-${code}-${idx}`}
+                        >
+                          <Eye size={14} className="ml-1" />
+                          معاينة
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(result.code, result.filename)}
+                          data-testid={`download-btn-${code}-${idx}`}
+                        >
+                          <Download size={14} className="ml-1" />
+                          تحميل
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
