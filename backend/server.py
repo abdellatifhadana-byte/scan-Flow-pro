@@ -223,11 +223,12 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
         
         results = []
         if request.merge_enabled:
-            results = smart_merge.merge_by_code(all_codes, request.nom)
+            results = smart_merge.merge_by_code(all_codes)
         else:
             for code, pages in all_codes.items():
                 for page_data in pages:
-                    output_path = RESULTS_DIR / "codes" / code / f"P{code}-{request.nom}.pdf"
+                    nom = page_data.get("nom", "")
+                    output_path = RESULTS_DIR / "codes" / code / f"P{code}-{nom}.pdf"
                     output_path.parent.mkdir(parents=True, exist_ok=True)
                     
                     pdf_processor.save_page_as_pdf(
