@@ -194,33 +194,53 @@ async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundT
 
 async def process_analysis(analysis_id: str, request: AnalysisRequest):
     try:
-        all_codes = {}
+        all_pages_data = []
         
+        # المرحلة 1: استخراج كل الأكواد من كل الملفات
         for idx, file_id in enumerate(request.file_ids):
             file_doc = await db.files.find_one({"file_id": file_id})
             if not file_doc or not file_doc.get("config"):
                 continue
             
-            progress = (idx / len(request.file_ids)) * 100
+            progress = (idx / len(request.file_ids)) * 50
             await db.analyses.update_one(
                 {"analysis_id": analysis_id},
-                {"$set": {"progress": progress}}
+                {"$set": {"progress": progress, "status": "extracting"}}
             )
             
             config = file_doc["config"]
             file_path = file_doc["file_path"]
+            filename = file_doc["filename"]
             nom = config.get("nom", "")
             
-            codes_data = ocr_engine.process_pdf(
+            pages_data = ocr_engine.process_pdf(
                 file_path=file_path,
                 config=config,
-                nom=nom
+                nom=nom,
+                file_id=file_id
             )
             
-            for code, pages in codes_data.items():
-                if code not in all_codes:
-                    all_codes[code] = []
-                all_codes[code].extend(pages)
+            # إضافة اسم الملف
+            for page in pages_data:
+                page['source_filename'] = filename
+            
+            all_pages_data.extend(pages_data)
+        
+        # المرحلة 2: محاذاة الأكواد
+        await db.analyses.update_one(
+            {"analysis_id": analysis_id},
+            {"$set": {"progress": 60, "status": "aligning"}}
+        )
+        
+        aligned_pages = code_alignment.align_codes(all_pages_data)
+        
+        # المرحلة 3: تجميع حسب الكود
+        await db.analyses.update_one(
+            {"analysis_id": analysis_id},
+            {"$set": {"progress": 75, "status": "grouping"}}
+        )
+        
+        grouped_by_code = code_alignment.group_by_code(aligned_pages)
         
         results = []
         if request.merge_enabled:
