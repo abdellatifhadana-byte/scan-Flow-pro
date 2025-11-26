@@ -311,12 +311,30 @@ const ResultsPage = () => {
             </p>
           </div>
 
+          {/* Merge Name Input */}
+          {selectedFiles.length > 0 && (
+            <div className="mt-6 pt-6 border-t">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                الاسم للملفات المدمجة (مطلوب):
+              </label>
+              <Input
+                value={mergeNom}
+                onChange={(e) => setMergeNom(e.target.value)}
+                placeholder="مثال: AQUIESSEMENT"
+                className="max-w-md h-11 border-2 border-gray-200 focus:border-blue-500 text-lg"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                سيتم استخدام هذا الاسم في تسمية الملفات المدمجة: P{'{code}'}-PV-{mergeNom || 'الاسم'}
+              </p>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex gap-3 mt-6 pt-6 border-t">
             <Button 
               onClick={handleMergeSelected}
-              disabled={selectedFiles.length === 0}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+              disabled={selectedFiles.length === 0 || !mergeNom}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg disabled:opacity-50"
             >
               <Package size={18} className="ml-2" />
               تجميع الملفات المحددة ({selectedFiles.length})
