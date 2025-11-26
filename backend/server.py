@@ -766,6 +766,137 @@ async def restart_application():
         logger.error(f"Restart error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/merge-by-files")
+async def merge_by_parent_files(request: MergeByFilesRequest):
+    """تجميع أو إنشاء ملفات فردية حسب الملفات الأب المحددة"""
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        
+        # تصفية النتائج لتشمل فقط الصفحات من الملفات المحددة
+        filtered_results = [
+            r for r in results 
+            if r.get('source_filename') in request.parent_files
+        ]
+        
+        if not filtered_results:
+            raise HTTPException(status_code=400, detail="No pages found for selected files")
+        
+        if request.merge_type == "merge":
+            # تجميع حسب الكود - ملف واحد لكل كود
+            grouped_by_code = {}
+            for result in filtered_results:
+                code = result.get('aligned_code') or result.get('code')
+                if code:
+                    if code not in grouped_by_code:
+                        grouped_by_code[code] = []
+                    grouped_by_code[code].append(result)
+            
+            merged_files = []
+            for code, pages in grouped_by_code.items():
+                # ترتيب الصفحات: الصفحة الرئيسية أولاً، ثم التابعة
+                pages.sort(key=lambda x: (
+                    x.get('source_filename', ''),
+                    x.get('source_page', 0)
+                ))
+                
+                # جمع أسماء nom من كل الصفحات
+                noms = list(set([p.get('nom', '') for p in pages if p.get('nom')]))
+                nom_str = '-'.join(noms) if noms else 'merged'
+                
+                output_filename = f"P{code}-PV-{nom_str}.pdf"
+                output_dir = RESULTS_DIR / "codes" / code
+                output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = output_dir / output_filename
+                
+                # جمع كل الصفحات للدمج
+                pages_to_merge = []
+                for page in pages:
+                    source_path = page.get('file_path', '')
+                    
+                    # إذا كان الملف موجوداً مسبقاً، نستخدمه
+                    if source_path and Path(source_path).exists():
+                        pages_to_merge.append({
+                            'source_path': source_path,
+                            'page_num': 0
+                        })
+                    else:
+                        # نستخدم ملف PDF الأصلي والصفحة المحددة
+                        file_doc = await db.files.find_one({"file_id": page.get('file_id')})
+                        if file_doc:
+                            pages_to_merge.append({
+                                'source_path': file_doc['file_path'],
+                                'page_num': page.get('source_page', 0)
+                            })
+                
+                # دمج جميع الصفحات
+                if pages_to_merge:
+                    pdf_processor.merge_pdfs(pages_to_merge, str(output_path))
+                    
+                    merged_files.append({
+                        'code': code,
+                        'filename': output_filename,
+                        'path': str(output_path),
+                        'page_count': len(pages_to_merge)
+                    })
+            
+            return {
+                "message": f"تم تجميع {len(merged_files)} ملف بنجاح",
+                "files": merged_files,
+                "total_codes": len(merged_files)
+            }
+        
+        elif request.merge_type == "individual":
+            # إنشاء ملف منفصل لكل صفحة
+            created_files = []
+            
+            for result in filtered_results:
+                code = result.get('aligned_code') or result.get('code')
+                nom = result.get('nom', 'page')
+                
+                output_filename = f"P{code}-{nom}.pdf"
+                output_dir = RESULTS_DIR / "codes" / code
+                output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = output_dir / output_filename
+                
+                # إنشاء الملف
+                source_path = result.get('file_path', '')
+                if source_path and Path(source_path).exists():
+                    # نسخ الملف الموجود
+                    shutil.copy(source_path, output_path)
+                else:
+                    # إنشاء من PDF الأصلي
+                    file_doc = await db.files.find_one({"file_id": result.get('file_id')})
+                    if file_doc:
+                        pdf_processor.save_page_as_pdf(
+                            file_doc['file_path'],
+                            result.get('source_page', 0),
+                            str(output_path)
+                        )
+                
+                created_files.append({
+                    'code': code,
+                    'filename': output_filename,
+                    'path': str(output_path),
+                    'source_file': result.get('source_filename', '')
+                })
+            
+            return {
+                "message": f"تم إنشاء {len(created_files)} ملف منفصل بنجاح",
+                "files": created_files,
+                "total_files": len(created_files)
+            }
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid merge_type")
+    
+    except Exception as e:
+        logger.error(f"Merge by files error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.include_router(api_router)
 
 app.add_middleware(
