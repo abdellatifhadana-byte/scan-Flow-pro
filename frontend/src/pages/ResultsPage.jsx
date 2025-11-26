@@ -86,8 +86,13 @@ const ResultsPage = () => {
       });
     }
 
+    // فقط اعرض الصفحات من الملفات المحددة (إذا كانت هناك ملفات محددة)
     if (selectedFiles.length > 0) {
       filtered = filtered.filter(page => selectedFiles.includes(page.parentFile));
+    }
+    // إذا لم يتم تحديد أي ملف، اعرض كل الصفحات
+    else {
+      filtered = allPages;
     }
 
     if (filterType !== 'all') {
