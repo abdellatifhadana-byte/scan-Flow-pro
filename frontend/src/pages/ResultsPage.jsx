@@ -144,16 +144,21 @@ const ResultsPage = () => {
     }
 
     try {
-      const selectedData = allPages.filter(p => selectedPages.includes(p.id));
-      
-      // إرسال طلب تجميع
       toast.info(`جاري تجميع ${selectedPages.length} صفحة...`);
       
-      // TODO: API endpoint للتجميع
+      const response = await axios.post(`${API}/merge-selected`, {
+        analysis_id: analysisId,
+        page_ids: selectedPages,
+        merge_type: 'merge'
+      });
       
-      toast.success('تم التجميع بنجاح');
+      toast.success(`تم التجميع بنجاح! تم إنشاء ${response.data.files.length} ملف`);
+      
+      // إعادة تحميل النتائج
+      loadResults();
     } catch (error) {
-      toast.error('خطأ في التجميع');
+      console.error('Merge error:', error);
+      toast.error('خطأ في التجميع: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -166,11 +171,18 @@ const ResultsPage = () => {
     try {
       toast.info(`جاري إنشاء ${selectedPages.length} ملف منفصل...`);
       
-      // TODO: API endpoint للإنشاء المنفصل
+      const response = await axios.post(`${API}/create-individual`, {
+        analysis_id: analysisId,
+        page_ids: selectedPages,
+        merge_type: 'individual'
+      });
       
-      toast.success('تم الإنشاء بنجاح');
+      toast.success(`تم الإنشاء بنجاح! ${response.data.files.length} ملف`);
+      
+      loadResults();
     } catch (error) {
-      toast.error('خطأ في الإنشاء');
+      console.error('Create individual error:', error);
+      toast.error('خطأ في الإنشاء: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -178,11 +190,18 @@ const ResultsPage = () => {
     try {
       toast.info('جاري تجميع جميع الملفات...');
       
-      // TODO: API endpoint للتجميع الكامل
+      const response = await axios.post(`${API}/merge-all`, {
+        analysis_id: analysisId,
+        page_ids: [],
+        merge_type: 'merge_all'
+      });
       
-      toast.success('تم تجميع الكل بنجاح');
+      toast.success(`تم تجميع الكل بنجاح! ${response.data.total_codes} كود`);
+      
+      loadResults();
     } catch (error) {
-      toast.error('خطأ في التجميع الكامل');
+      console.error('Merge all error:', error);
+      toast.error('خطأ في التجميع الكامل: ' + (error.response?.data?.detail || error.message));
     }
   };
 
