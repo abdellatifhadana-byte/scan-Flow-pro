@@ -202,7 +202,7 @@ class OCREngine:
         return None
     
     def process_page(self, pdf_path: str, page_num: int, config: Dict) -> tuple:
-        """معالجة صفحة واحدة واستخراج الكود"""
+        """معالجة صفحة واحدة واستخراج الكود - يرجع (code, confidence, roi_image_path)"""
         try:
             logger.info(f"Processing page {page_num} from {pdf_path}")
             
@@ -226,11 +226,17 @@ class OCREngine:
                 roi_image = image
                 logger.info("Using full page (no ROI)")
             
+            # حفظ صورة ROI كـ thumbnail
+            import tempfile
+            roi_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+            cv2.imwrite(roi_temp.name, roi_image)
+            roi_thumbnail_path = roi_temp.name
+            
             processed = self.preprocess_image(roi_image)
             logger.info("Image preprocessing completed")
             
-            text_tesseract = self.ocr_tesseract(processed)
-            logger.info(f"Tesseract OCR result length: {len(text_tesseract)}")
+            text_tesseract, ocr_confidence = self.ocr_tesseract(processed)
+            logger.info(f"Tesseract OCR result length: {len(text_tesseract)}, confidence: {ocr_confidence:.2f}%")
             
             combined_text = text_tesseract
             
@@ -241,22 +247,22 @@ class OCREngine:
                 logger.info("EasyOCR completed")
             
             keyword = config.get('keyword', '')
-            code = self.extract_code_from_text(combined_text, keyword)
+            code, confidence = self.extract_code_from_text(combined_text, keyword, ocr_confidence)
             
             doc.close()
             
             if code:
-                logger.info(f"✓ Successfully extracted code: {code} from page {page_num}")
+                logger.info(f"✓ Successfully extracted code: {code} from page {page_num} (confidence: {confidence:.2f}%)")
+                return code, confidence, roi_thumbnail_path
             else:
                 logger.warning(f"✗ Failed to extract code from page {page_num}")
-            
-            return code
+                return None, 0, roi_thumbnail_path
         
         except Exception as e:
             logger.error(f"Error processing page {page_num} of {pdf_path}: {str(e)}")
             import traceback
             logger.error(traceback.format_exc())
-            return None
+            return None, 0, None
     
     def process_pdf(self, file_path: str, config: Dict, nom: str) -> Dict[str, List]:
         """معالجة ملف PDF كامل"""
