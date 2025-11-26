@@ -37,14 +37,14 @@ const ResultsPage = () => {
 
   const loadResults = async () => {
     try {
-      const response = await axios.get(`${API}/results/${analysisId}`);
+      const response = await axios.get(`${API}/analysis/${analysisId}`);
       const resultsData = response.data.results || [];
       
       const pages = resultsData.map((result, idx) => ({
-        id: `${result.file_id}-${result.source_page}`,
+        id: `${result.file_id || idx}-${result.source_page || 0}`,
         index: idx,
         parentFile: result.source_filename,
-        pageNumber: result.source_page + 1,
+        pageNumber: (result.source_page || 0) + 1,
         code: result.aligned_code || result.code,
         originalCode: result.original_code,
         confidence: result.confidence || 0,
@@ -61,11 +61,17 @@ const ResultsPage = () => {
       setAllPages(pages);
       setFilteredPages(pages);
       
-      const analysisResponse = await axios.get(`${API}/analysis/${analysisId}`);
-      setStatistics(analysisResponse.data.statistics);
+      // Extract statistics from data
+      const stats = {
+        high_confidence: pages.filter(p => p.confidenceLevel === 'high').length,
+        medium_confidence: pages.filter(p => p.confidenceLevel === 'medium').length,
+        low_confidence: pages.filter(p => p.confidenceLevel === 'low').length,
+      };
+      setStatistics(stats);
       
       setLoading(false);
     } catch (error) {
+      console.error('Load results error:', error);
       toast.error('خطأ في تحميل النتائج');
       setLoading(false);
     }
