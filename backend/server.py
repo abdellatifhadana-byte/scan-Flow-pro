@@ -636,6 +636,12 @@ async def merge_all_smart(request: MergeAllSmartRequest):
         
         results = analysis.get("results", [])
         
+        # الحصول على معلومات الملفات
+        files_map = {}
+        files = await db.files.find({}, {"_id": 0}).to_list(1000)
+        for f in files:
+            files_map[f['filename']] = f['file_path']
+        
         # تقسيم النتائج حسب الملفات المحددة
         selected_results = [r for r in results if r.get('source_filename') in request.selected_files]
         unselected_results = [r for r in results if r.get('source_filename') not in request.selected_files]
@@ -643,7 +649,7 @@ async def merge_all_smart(request: MergeAllSmartRequest):
         created_files = []
         
         # 1. تجميع الملفات المحددة حسب الكود
-        if selected_results:
+        if selected_results and request.selected_files:
             grouped_by_code = {}
             for result in selected_results:
                 code = result.get('aligned_code') or result.get('code')
@@ -663,10 +669,10 @@ async def merge_all_smart(request: MergeAllSmartRequest):
                 
                 pages_to_merge = []
                 for page in pages:
-                    file_doc = await db.files.find_one({"file_id": page.get('file_id')})
-                    if file_doc:
+                    source_filename = page.get('source_filename')
+                    if source_filename and source_filename in files_map:
                         pages_to_merge.append({
-                            'source_path': file_doc['file_path'],
+                            'source_path': files_map[source_filename],
                             'page_num': page.get('source_page', 0)
                         })
                 
@@ -690,10 +696,10 @@ async def merge_all_smart(request: MergeAllSmartRequest):
                 output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = output_dir / output_filename
                 
-                file_doc = await db.files.find_one({"file_id": result.get('file_id')})
-                if file_doc:
+                source_filename = result.get('source_filename')
+                if source_filename and source_filename in files_map:
                     pdf_processor.save_page_as_pdf(
-                        file_doc['file_path'],
+                        files_map[source_filename],
                         result.get('source_page', 0),
                         str(output_path)
                     )
