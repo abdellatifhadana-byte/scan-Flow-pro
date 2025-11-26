@@ -828,12 +828,15 @@ async def merge_by_parent_files(request: MergeByFilesRequest):
                     x.get('source_page', 0)
                 ))
                 
-                # جمع أسماء nom من كل الصفحات
-                noms = list(set([p.get('nom', '') for p in pages if p.get('nom')]))
-                nom_str = '-'.join(noms) if noms else 'merged'
+                # استخدام الاسم المخصص أو جمع أسماء nom
+                if request.custom_nom:
+                    nom_str = request.custom_nom
+                else:
+                    noms = list(set([p.get('nom', '') for p in pages if p.get('nom')]))
+                    nom_str = '-'.join(noms) if noms else 'merged'
                 
                 output_filename = f"P{code}-PV-{nom_str}.pdf"
-                output_dir = RESULTS_DIR / "codes" / code
+                output_dir = RESULTS_DIR / "codes" / f"P{code}"
                 output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = output_dir / output_filename
                 
