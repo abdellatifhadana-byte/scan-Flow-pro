@@ -101,26 +101,41 @@ class OCREngine:
         logger.info(f"Keyword: '{keyword}'")
         logger.info(f"Text preview: {text[:200]}")
         
+        # تنظيف النص من الرموز والمسافات الزائدة
+        cleaned_text = re.sub(r'[|،,.\s]+', ' ', text).strip()
+        logger.info(f"Cleaned text: {cleaned_text}")
+        
         # البحث عن الكلمة المفتاحية والكود بعدها
-        keyword_patterns = [
-            keyword,
-            keyword.replace(' ', ''),
-            keyword.replace(' ', '.*')
-        ]
+        if keyword.strip():
+            keyword_patterns = [
+                keyword,
+                keyword.replace(' ', ''),
+                keyword.replace(' ', '.*')
+            ]
+            
+            for pattern in keyword_patterns:
+                regex = f"{re.escape(pattern)}[\\s:.-]*([0-9]{{4,8}})"
+                match = re.search(regex, text, re.IGNORECASE)
+                if match:
+                    code = match.group(1)
+                    logger.info(f"✓ Code found with keyword pattern '{pattern}': {code}")
+                    return code
         
-        for pattern in keyword_patterns:
-            regex = f"{re.escape(pattern)}[\\s:.-]*([0-9]{{4,8}})"
-            match = re.search(regex, text, re.IGNORECASE)
-            if match:
-                code = match.group(1)
-                logger.info(f"✓ Code found with keyword pattern '{pattern}': {code}")
-                return code
+        # البحث عن أي كود رقمي (4-8 أرقام) مباشرة في النص
+        # أولاً: ابحث عن الأرقام المتصلة
+        all_numbers = re.findall(r'[0-9]+', cleaned_text)
+        logger.info(f"Found numbers in text: {all_numbers}")
         
-        # البحث عن أي كود رقمي (4-8 أرقام) كخيار احتياطي
-        code_match = re.search(r'\\b([0-9]{4,8})\\b', text)
+        for num in all_numbers:
+            if 4 <= len(num) <= 8:
+                logger.info(f"✓ Code found (direct extraction): {num}")
+                return num
+        
+        # محاولة استخراج من النص الأصلي أيضاً
+        code_match = re.search(r'([0-9]{4,8})', text)
         if code_match:
             code = code_match.group(1)
-            logger.info(f"✓ Code found without keyword: {code}")
+            logger.info(f"✓ Code found (fallback): {code}")
             return code
         
         logger.warning(f"✗ No code found in text")
