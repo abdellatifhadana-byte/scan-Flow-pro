@@ -196,6 +196,54 @@ const ResultsPage = () => {
     }
   };
 
+  const handleMergeByFiles = async () => {
+    if (selectedFiles.length === 0) {
+      toast.error('الرجاء اختيار ملفات للتجميع');
+      return;
+    }
+
+    try {
+      toast.info(`جاري تجميع صفحات ${selectedFiles.length} ملف...`);
+      
+      const response = await axios.post(`${API}/merge-by-files`, {
+        analysis_id: analysisId,
+        parent_files: selectedFiles,
+        merge_type: 'merge'
+      });
+      
+      toast.success(`${response.data.message}\nتم إنشاء ${response.data.total_codes} ملف مدمج`);
+      
+      loadResults();
+    } catch (error) {
+      console.error('Merge by files error:', error);
+      toast.error('خطأ في التجميع: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleCreateIndividualByFiles = async () => {
+    if (selectedFiles.length === 0) {
+      toast.error('الرجاء اختيار ملفات');
+      return;
+    }
+
+    try {
+      toast.info(`جاري إنشاء ملفات فردية من ${selectedFiles.length} ملف...`);
+      
+      const response = await axios.post(`${API}/merge-by-files`, {
+        analysis_id: analysisId,
+        parent_files: selectedFiles,
+        merge_type: 'individual'
+      });
+      
+      toast.success(`${response.data.message}\nتم إنشاء ${response.data.total_files} ملف منفصل`);
+      
+      loadResults();
+    } catch (error) {
+      console.error('Create individual by files error:', error);
+      toast.error('خطأ في الإنشاء: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
   const handleMergeSelected = async () => {
     if (selectedPages.length === 0) {
       toast.error('الرجاء اختيار صفحات للتجميع');
@@ -213,7 +261,6 @@ const ResultsPage = () => {
       
       toast.success(`تم التجميع بنجاح! تم إنشاء ${response.data.files.length} ملف`);
       
-      // إعادة تحميل النتائج
       loadResults();
     } catch (error) {
       console.error('Merge error:', error);
