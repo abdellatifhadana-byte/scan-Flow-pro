@@ -561,6 +561,11 @@ async def create_individual_files(request: MergeRequest):
         logger.error(f"Create individual error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+class MergeAllSmartRequest(BaseModel):
+    analysis_id: str
+    selected_files: List[str]  # الملفات المحددة للتجميع
+    custom_nom: Optional[str] = None  # الاسم المخصص
+
 @api_router.post("/merge-all")
 async def merge_all_by_code(request: MergeRequest):
     """تجميع جميع الملفات حسب الكود"""
@@ -590,7 +595,7 @@ async def merge_all_by_code(request: MergeRequest):
             nom_str = '-'.join(noms) if noms else 'all'
             
             output_filename = f"P{code}-PV-{nom_str}.pdf"
-            output_dir = RESULTS_DIR / "codes" / code
+            output_dir = RESULTS_DIR / "codes" / f"P{code}"
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / output_filename
             
@@ -619,6 +624,99 @@ async def merge_all_by_code(request: MergeRequest):
     
     except Exception as e:
         logger.error(f"Merge all error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/merge-all-smart")
+async def merge_all_smart(request: MergeAllSmartRequest):
+    """معالجة ذكية: تجميع الملفات المحددة، وإنشاء فردي للباقي"""
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        
+        # تقسيم النتائج حسب الملفات المحددة
+        selected_results = [r for r in results if r.get('source_filename') in request.selected_files]
+        unselected_results = [r for r in results if r.get('source_filename') not in request.selected_files]
+        
+        created_files = []
+        
+        # 1. تجميع الملفات المحددة حسب الكود
+        if selected_results:
+            grouped_by_code = {}
+            for result in selected_results:
+                code = result.get('aligned_code') or result.get('code')
+                if code:
+                    if code not in grouped_by_code:
+                        grouped_by_code[code] = []
+                    grouped_by_code[code].append(result)
+            
+            for code, pages in grouped_by_code.items():
+                pages.sort(key=lambda x: (x.get('source_filename', ''), x.get('source_page', 0)))
+                
+                nom_str = request.custom_nom if request.custom_nom else 'merged'
+                output_filename = f"P{code}-PV-{nom_str}.pdf"
+                output_dir = RESULTS_DIR / "codes" / f"P{code}"
+                output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = output_dir / output_filename
+                
+                pages_to_merge = []
+                for page in pages:
+                    file_doc = await db.files.find_one({"file_id": page.get('file_id')})
+                    if file_doc:
+                        pages_to_merge.append({
+                            'source_path': file_doc['file_path'],
+                            'page_num': page.get('source_page', 0)
+                        })
+                
+                if pages_to_merge:
+                    pdf_processor.merge_pdfs(pages_to_merge, str(output_path))
+                    created_files.append({
+                        'code': code,
+                        'filename': output_filename,
+                        'path': str(output_path),
+                        'type': 'merged'
+                    })
+        
+        # 2. إنشاء ملفات فردية للملفات غير المحددة
+        if unselected_results:
+            for result in unselected_results:
+                code = result.get('aligned_code') or result.get('code')
+                nom = result.get('nom', 'page')
+                
+                output_filename = f"P{code}-{nom}.pdf"
+                output_dir = RESULTS_DIR / "codes" / f"P{code}"
+                output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = output_dir / output_filename
+                
+                file_doc = await db.files.find_one({"file_id": result.get('file_id')})
+                if file_doc:
+                    pdf_processor.save_page_as_pdf(
+                        file_doc['file_path'],
+                        result.get('source_page', 0),
+                        str(output_path)
+                    )
+                    
+                    created_files.append({
+                        'code': code,
+                        'filename': output_filename,
+                        'path': str(output_path),
+                        'type': 'individual'
+                    })
+        
+        merged_count = len([f for f in created_files if f['type'] == 'merged'])
+        individual_count = len([f for f in created_files if f['type'] == 'individual'])
+        
+        return {
+            "message": f"تم إنشاء {merged_count} ملف مدمج و {individual_count} ملف فردي",
+            "files": created_files,
+            "total_merged": merged_count,
+            "total_individual": individual_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Merge all smart error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/download-result/{code}/{filename}")
