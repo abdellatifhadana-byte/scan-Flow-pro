@@ -23,6 +23,7 @@ const ResultsPage = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPages, setSelectedPages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterByFile, setFilterByFile] = useState('all');
@@ -30,6 +31,7 @@ const ResultsPage = () => {
   const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showCleanAllDialog, setShowCleanAllDialog] = useState(false);
+  const [savingChanges, setSavingChanges] = useState(false);
 
   useEffect(() => {
     loadResults();
