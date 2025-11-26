@@ -187,7 +187,7 @@ const UploadPage = () => {
           className="w-full"
           size="lg"
           onClick={handleStartAnalysis}
-          disabled={files.length === 0 || !nom.trim()}
+          disabled={files.length === 0}
           data-testid="start-analysis-btn"
         >
           <Play size={20} className="ml-2" />
