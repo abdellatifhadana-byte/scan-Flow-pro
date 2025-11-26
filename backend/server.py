@@ -636,17 +636,10 @@ async def merge_all_smart(request: MergeAllSmartRequest):
         
         results = analysis.get("results", [])
         
-        # الحصول على معلومات الملفات - استخدام file_id من النتائج
-        all_file_ids = set()
-        for r in results:
-            if r.get('file_id'):
-                all_file_ids.add(r.get('file_id'))
-        
-        files_map = {}
-        if all_file_ids:
-            files = await db.files.find({"file_id": {"$in": list(all_file_ids)}}, {"_id": 0}).to_list(1000)
-            for f in files:
-                files_map[f['file_id']] = f['file_path']
+        # الحصول على معلومات الملفات - map filename to file_path
+        files = await db.files.find({}, {"_id": 0, "filename": 1, "file_path": 1, "file_id": 1}).to_list(1000)
+        filename_to_path = {f['filename']: f['file_path'] for f in files}
+        fileid_to_path = {f['file_id']: f['file_path'] for f in files if 'file_id' in f}
         
         # تقسيم النتائج حسب الملفات المحددة
         selected_results = [r for r in results if r.get('source_filename') in request.selected_files]
