@@ -326,8 +326,8 @@ const ResultsPage = () => {
       <div className="card mb-4">
         <div className="flex flex-col gap-4">
           {/* الصف الأول: البحث والفلترة */}
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 relative">
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex-1 min-w-[250px] relative">
               <Search className="absolute right-3 top-3 text-gray-400" size={20} />
               <Input
                 placeholder="ابحث بالكود، الملف، الاسم، أو الكلمة المفتاحية..."
@@ -337,6 +337,17 @@ const ResultsPage = () => {
                 data-testid="search-input"
               />
             </div>
+            <Select value={filterByFile} onValueChange={setFilterByFile}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="تصفية حسب الملف" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الملفات</SelectItem>
+                {getUniqueFiles().map((file, idx) => (
+                  <SelectItem key={idx} value={file}>{file}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-48">
                 <SelectValue />
