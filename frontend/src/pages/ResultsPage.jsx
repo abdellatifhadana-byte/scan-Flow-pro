@@ -483,40 +483,96 @@ const ResultsPage = () => {
             </div>
           )}
 
-          {/* الصف الثالث: أزرار الإجراءات الرئيسية */}
-          <div className="flex gap-2 flex-wrap">
+          {/* الصف الثالث: اختيار الملفات */}
+          <div className="border-t pt-3">
+            <h3 className="text-sm font-semibold mb-2 text-gray-700">اختيار الملفات للمعالجة:</h3>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAllFiles}
+              >
+                {selectedFiles.length === getUniqueFiles().length ? 'إلغاء تحديد الكل' : 'تحديد كل الملفات'}
+              </Button>
+              {getUniqueFiles().map((file, idx) => (
+                <Badge
+                  key={idx}
+                  variant={selectedFiles.includes(file) ? "default" : "outline"}
+                  className="cursor-pointer px-3 py-2 text-sm"
+                  onClick={() => handleSelectFile(file)}
+                >
+                  <Checkbox
+                    checked={selectedFiles.includes(file)}
+                    className="ml-2"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {file}
+                </Badge>
+              ))}
+              <span className="text-sm text-gray-500 mr-auto">
+                {selectedFiles.length} من {getUniqueFiles().length} ملف محدد
+              </span>
+            </div>
+          </div>
+
+          {/* الصف الرابع: أزرار المعالجة حسب الملفات */}
+          <div className="flex gap-2 flex-wrap border-t pt-3">
             <Button 
+              onClick={handleMergeByFiles}
+              disabled={selectedFiles.length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Package size={16} className="ml-2" />
+              تجميع الملفات المحددة
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleCreateIndividualByFiles}
+              disabled={selectedFiles.length === 0}
+            >
+              <FileCheck size={16} className="ml-2" />
+              إنشاء فردي للملفات المحددة
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleMergeAll}
+            >
+              <Files size={16} className="ml-2" />
+              تجميع الكل
+            </Button>
+          </div>
+
+          {/* الصف الخامس: أزرار معالجة الصفحات (النظام القديم) */}
+          <div className="flex gap-2 flex-wrap border-t pt-3">
+            <span className="text-xs text-gray-500 w-full mb-1">أو استخدم التحديد اليدوي للصفحات:</span>
+            <Button 
+              size="sm"
+              variant="secondary"
               onClick={handleMergeSelected}
               disabled={selectedPages.length === 0}
               data-testid="merge-selected-btn"
             >
-              <Package size={16} className="ml-2" />
-              تجميع المحددة ({selectedPages.length})
+              <Package size={14} className="ml-2" />
+              تجميع الصفحات المحددة ({selectedPages.length})
             </Button>
             <Button 
+              size="sm"
               variant="outline"
               onClick={handleCreateIndividual}
               disabled={selectedPages.length === 0}
               data-testid="create-individual-btn"
             >
-              <FileCheck size={16} className="ml-2" />
-              إنشاء منفصل للمحددة
+              <FileCheck size={14} className="ml-2" />
+              إنشاء فردي للصفحات المحددة
             </Button>
             <Button 
-              variant="outline"
-              onClick={handleMergeAll}
-              data-testid="merge-all-btn"
-            >
-              <Files size={16} className="ml-2" />
-              تجميع الكل
-            </Button>
-            <Button 
+              size="sm"
               variant="secondary"
               onClick={handleDownloadSelected}
               disabled={selectedPages.length === 0}
               data-testid="download-selected-btn"
             >
-              <Download size={16} className="ml-2" />
+              <Download size={14} className="ml-2" />
               تحميل المحددة
             </Button>
           </div>
