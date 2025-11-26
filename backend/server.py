@@ -62,7 +62,6 @@ class FileUploadResponse(BaseModel):
 
 class AnalysisRequest(BaseModel):
     file_ids: List[str]
-    nom: str
     merge_enabled: bool = True
 
 class AnalysisStatus(BaseModel):
