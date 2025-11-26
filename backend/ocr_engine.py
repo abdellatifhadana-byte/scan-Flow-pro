@@ -127,8 +127,11 @@ class OCREngine:
     
     def auto_detect_code_roi(self, image: np.ndarray) -> Optional[Dict]:
         """الكشف التلقائي عن منطقة الكود"""
+        if not self.use_easyocr or self.easyocr_reader_ar is None:
+            return None
+            
         try:
-            results = self.easyocr_reader.readtext(image)
+            results = self.easyocr_reader_ar.readtext(image)
             
             for (bbox, text, prob) in results:
                 if re.search(r'[0-9]{4,8}', text):
