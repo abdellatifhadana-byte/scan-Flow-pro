@@ -202,16 +202,22 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
             if not file_doc or not file_doc.get("config"):
                 continue
             
-            progress = (idx / len(request.file_ids)) * 50
-            await db.analyses.update_one(
-                {"analysis_id": analysis_id},
-                {"$set": {"progress": progress, "status": "extracting"}}
-            )
-            
             config = file_doc["config"]
             file_path = file_doc["file_path"]
             filename = file_doc["filename"]
             nom = config.get("nom", "")
+            
+            # تحديث الحالة مع اسم الملف
+            progress = (idx / len(request.file_ids)) * 50
+            await db.analyses.update_one(
+                {"analysis_id": analysis_id},
+                {"$set": {
+                    "progress": progress, 
+                    "status": "extracting",
+                    "current_file": filename,
+                    "current_page": 0
+                }}
+            )
             
             pages_data = ocr_engine.process_pdf(
                 file_path=file_path,
@@ -220,9 +226,21 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
                 file_id=file_id
             )
             
-            # إضافة اسم الملف
+            # إضافة اسم الملف وتحديث النتائج فوراً
             for page in pages_data:
                 page['source_filename'] = filename
+                
+                # تحديث قاعدة البيانات مع كل صفحة معالجة
+                await db.analyses.update_one(
+                    {"analysis_id": analysis_id},
+                    {
+                        "$set": {
+                            "current_page": page.get('page_num', 0) + 1,
+                            "current_code": page.get('code', '')
+                        },
+                        "$push": {"results": page}
+                    }
+                )
             
             all_pages_data.extend(pages_data)
         
