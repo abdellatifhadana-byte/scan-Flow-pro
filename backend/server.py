@@ -208,11 +208,12 @@ async def process_analysis(analysis_id: str, request: AnalysisRequest):
             
             config = file_doc["config"]
             file_path = file_doc["file_path"]
+            nom = config.get("nom", "")
             
             codes_data = ocr_engine.process_pdf(
                 file_path=file_path,
                 config=config,
-                nom=request.nom
+                nom=nom
             )
             
             for code, pages in codes_data.items():
