@@ -12,10 +12,19 @@ import fitz
 logger = logging.getLogger(__name__)
 
 class OCREngine:
-    def __init__(self):
+    def __init__(self, use_easyocr=False):
         self.tesseract_langs = 'ara+fra+eng'
-        self.easyocr_reader_ar = easyocr.Reader(['ar', 'en'], gpu=False)
-        self.easyocr_reader_fr = easyocr.Reader(['fr', 'en'], gpu=False)
+        self.use_easyocr = use_easyocr
+        self.easyocr_reader_ar = None
+        self.easyocr_reader_fr = None
+        
+        if use_easyocr:
+            try:
+                self.easyocr_reader_ar = easyocr.Reader(['ar', 'en'], gpu=False)
+                self.easyocr_reader_fr = easyocr.Reader(['fr', 'en'], gpu=False)
+            except Exception as e:
+                logger.warning(f"Failed to initialize EasyOCR: {str(e)}")
+                self.use_easyocr = False
     
     def preprocess_image(self, image: np.ndarray) -> np.ndarray:
         """معالجة الصورة لتحسين دقة OCR"""
