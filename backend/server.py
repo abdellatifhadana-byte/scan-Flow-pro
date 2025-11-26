@@ -551,6 +551,176 @@ async def merge_all_by_code(request: MergeRequest):
         logger.error(f"Merge all error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/download-result/{code}/{filename}")
+async def download_result_file(code: str, filename: str):
+    """تحميل ملف نتيجة معين"""
+    file_path = RESULTS_DIR / "codes" / code / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        file_path, 
+        media_type="application/pdf", 
+        filename=filename,
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/download-code-zip/{code}")
+async def download_code_as_zip(code: str):
+    """تحميل جميع ملفات كود معين كملف مضغوط"""
+    import zipfile
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    code_dir = RESULTS_DIR / "codes" / code
+    if not code_dir.exists():
+        raise HTTPException(status_code=404, detail="Code directory not found")
+    
+    # إنشاء ملف zip في الذاكرة
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for file_path in code_dir.glob("*.pdf"):
+            zip_file.write(file_path, file_path.name)
+    
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=Code_{code}_files.zip"}
+    )
+
+@api_router.post("/download-selected")
+async def download_selected_files(request: MergeRequest):
+    """تحميل الملفات المحددة كملف مضغوط"""
+    import zipfile
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    try:
+        analysis = await db.analyses.find_one({"analysis_id": request.analysis_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = analysis.get("results", [])
+        selected_results = [r for r in results if r.get("file_id") in request.page_ids or 
+                           f"{r.get('file_id')}-{r.get('source_page')}" in request.page_ids]
+        
+        if not selected_results:
+            raise HTTPException(status_code=400, detail="No pages selected")
+        
+        # إنشاء ملف zip
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for result in selected_results:
+                file_path = Path(result.get('file_path', ''))
+                if file_path.exists():
+                    zip_file.write(file_path, file_path.name)
+        
+        zip_buffer.seek(0)
+        
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=selected_files.zip"}
+        )
+    
+    except Exception as e:
+        logger.error(f"Download selected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/cleanup/old-files")
+async def cleanup_old_files():
+    """حذف الملفات القديمة من مجلد النتائج"""
+    try:
+        from datetime import datetime, timedelta
+        import time
+        
+        deleted_count = 0
+        # حذف الملفات الأقدم من 7 أيام
+        cutoff_time = time.time() - (7 * 24 * 60 * 60)
+        
+        for code_dir in (RESULTS_DIR / "codes").iterdir():
+            if code_dir.is_dir():
+                for file_path in code_dir.glob("*.pdf"):
+                    if file_path.stat().st_mtime < cutoff_time:
+                        file_path.unlink()
+                        deleted_count += 1
+                
+                # حذف المجلد إذا كان فارغاً
+                if not any(code_dir.iterdir()):
+                    code_dir.rmdir()
+        
+        return {
+            "message": f"تم حذف {deleted_count} ملف قديم",
+            "deleted_count": deleted_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Cleanup old files error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/cleanup/all")
+async def cleanup_all_data():
+    """تنظيف جميع البيانات والملفات"""
+    try:
+        deleted_info = {
+            "uploads": 0,
+            "results": 0,
+            "db_files": 0,
+            "db_analyses": 0
+        }
+        
+        # حذف ملفات الرفع
+        if UPLOADS_DIR.exists():
+            for file_path in UPLOADS_DIR.glob("*.pdf"):
+                file_path.unlink()
+                deleted_info["uploads"] += 1
+        
+        # حذف ملفات النتائج
+        if (RESULTS_DIR / "codes").exists():
+            for code_dir in (RESULTS_DIR / "codes").iterdir():
+                if code_dir.is_dir():
+                    for file_path in code_dir.glob("*"):
+                        file_path.unlink()
+                        deleted_info["results"] += 1
+                    code_dir.rmdir()
+        
+        # حذف البيانات من قاعدة البيانات
+        result_files = await db.files.delete_many({})
+        deleted_info["db_files"] = result_files.deleted_count
+        
+        result_analyses = await db.analyses.delete_many({})
+        deleted_info["db_analyses"] = result_analyses.deleted_count
+        
+        return {
+            "message": "تم تنظيف جميع البيانات بنجاح",
+            "details": deleted_info
+        }
+    
+    except Exception as e:
+        logger.error(f"Cleanup all error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/system/restart")
+async def restart_application():
+    """إعادة تشغيل التطبيق"""
+    try:
+        import subprocess
+        import sys
+        
+        # إعادة تشغيل supervisor
+        subprocess.Popen(["sudo", "supervisorctl", "restart", "backend"])
+        
+        return {
+            "message": "جاري إعادة تشغيل التطبيق...",
+            "status": "restarting"
+        }
+    
+    except Exception as e:
+        logger.error(f"Restart error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.include_router(api_router)
 
 app.add_middleware(
