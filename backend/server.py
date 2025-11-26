@@ -357,6 +357,15 @@ async def add_keyword(keyword: str):
         await db.keywords.insert_one({"keyword": keyword})
     return {"message": "Keyword added"}
 
+@api_router.get("/thumbnail/{thumbnail_id}")
+async def get_thumbnail(thumbnail_id: str):
+    """الحصول على الصورة المصغرة لمنطقة ROI"""
+    from pathlib import Path
+    thumbnail_path = Path(f"/tmp/{thumbnail_id}")
+    if thumbnail_path.exists():
+        return FileResponse(thumbnail_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Thumbnail not found")
+
 app.include_router(api_router)
 
 app.add_middleware(
