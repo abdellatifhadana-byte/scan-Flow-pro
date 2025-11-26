@@ -44,7 +44,8 @@ class CodeAlignment:
             best_confidence = best_page['confidence']
             
             logger.info(f"Position {position}: Best code = {best_code} (confidence: {best_confidence:.2f}%)")
-            logger.info(f"  Candidates: {[(p['file_id'][:8], p['code'], f\"{p['confidence']:.2f}%\") for p in pages_at_position]}")
+            candidates_info = [(p['file_id'][:8], p['code'], f"{p['confidence']:.2f}%") for p in pages_at_position]
+            logger.info(f"  Candidates: {candidates_info}")
             
             # تطبيق الكود الأفضل على جميع الصفحات في هذا الموضع
             for page in pages_at_position:
