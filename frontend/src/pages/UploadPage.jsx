@@ -13,7 +13,6 @@ const API = `${BACKEND_URL}/api`;
 const UploadPage = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState([]);
-  const [nom, setNom] = useState('');
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
