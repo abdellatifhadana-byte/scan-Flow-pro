@@ -8,12 +8,15 @@ class SmartMerge:
     def __init__(self):
         self.pdf_processor = PDFProcessor()
     
-    def merge_by_code(self, codes_data: dict, nom: str) -> list:
+    def merge_by_code(self, codes_data: dict) -> list:
         """دمج الصفحات حسب الكود"""
         results = []
         
         for code, pages in codes_data.items():
             try:
+                # استخدام nom من أول صفحة (كل الصفحات لنفس الكود يجب أن تأتي من نفس الملف)
+                nom = pages[0].get('nom', '') if pages else ''
+                
                 output_dir = Path("results") / "codes" / code
                 output_dir.mkdir(parents=True, exist_ok=True)
                 
