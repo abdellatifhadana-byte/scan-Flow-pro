@@ -69,10 +69,11 @@ class OCREngine:
             logger.error(f"Tesseract OCR error: {str(e)}")
             return ""
     
-    def ocr_easyocr(self, image: np.ndarray) -> str:
+    def ocr_easyocr(self, image: np.ndarray, use_arabic: bool = True) -> str:
         """OCR باستخدام EasyOCR"""
         try:
-            results = self.easyocr_reader.readtext(image, detail=0)
+            reader = self.easyocr_reader_ar if use_arabic else self.easyocr_reader_fr
+            results = reader.readtext(image, detail=0)
             return ' '.join(results)
         except Exception as e:
             logger.error(f"EasyOCR error: {str(e)}")
