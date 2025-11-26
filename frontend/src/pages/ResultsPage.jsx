@@ -563,6 +563,66 @@ const ResultsPage = () => {
           </Table>
         </div>
       )}
+
+      {/* Dialog: تأكيد مسح الملفات القديمة */}
+      <AlertDialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>مسح الملفات القديمة</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف جميع الملفات الأقدم من 7 أيام؟ هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCleanupOldFiles} className="bg-red-600 hover:bg-red-700">
+              تأكيد الحذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog: تأكيد تنظيف كل البيانات */}
+      <AlertDialog open={showCleanAllDialog} onOpenChange={setShowCleanAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ تحذير: تنظيف شامل</AlertDialogTitle>
+            <AlertDialogDescription>
+              هذا الإجراء سيحذف:
+              <ul className="list-disc mr-6 mt-2">
+                <li>جميع الملفات المرفوعة</li>
+                <li>جميع ملفات النتائج</li>
+                <li>جميع بيانات التحليلات</li>
+              </ul>
+              <strong className="text-red-600 block mt-2">هذا الإجراء لا يمكن التراجع عنه!</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCleanAll} className="bg-red-600 hover:bg-red-700">
+              تأكيد التنظيف الشامل
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog: تأكيد إعادة التشغيل */}
+      <AlertDialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>إعادة تشغيل التطبيق</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم إعادة تشغيل التطبيق وستحتاج إلى تحديث الصفحة بعد بضع ثوانٍ. هل تريد المتابعة؟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestartApp}>
+              إعادة التشغيل
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
