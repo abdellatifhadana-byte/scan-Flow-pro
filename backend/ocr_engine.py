@@ -80,8 +80,13 @@ class OCREngine:
     
     def ocr_easyocr(self, image: np.ndarray, use_arabic: bool = True) -> str:
         """OCR باستخدام EasyOCR"""
+        if not self.use_easyocr or (self.easyocr_reader_ar is None and self.easyocr_reader_fr is None):
+            return ""
+        
         try:
             reader = self.easyocr_reader_ar if use_arabic else self.easyocr_reader_fr
+            if reader is None:
+                return ""
             results = reader.readtext(image, detail=0)
             return ' '.join(results)
         except Exception as e:
