@@ -21,6 +21,7 @@ const ROIEditor = () => {
   const [rotation, setRotation] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [keywords, setKeywords] = useState([]);
+  const [nom, setNom] = useState('');
   const [pagesPerCode, setPagesPerCode] = useState(1);
   const [codeROI, setCodeROI] = useState(null);
   const [keywordROI, setKeywordROI] = useState(null);
