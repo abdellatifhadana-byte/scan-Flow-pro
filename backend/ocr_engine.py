@@ -65,18 +65,32 @@ class OCREngine:
         rotated = cv2.warpAffine(image, matrix, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
         return rotated
     
-    def ocr_tesseract(self, image: np.ndarray) -> str:
-        """OCR باستخدام Tesseract"""
+    def ocr_tesseract(self, image: np.ndarray) -> tuple:
+        """OCR باستخدام Tesseract - يرجع (text, confidence)"""
         try:
+            # استخراج النص
             text = pytesseract.image_to_string(
                 image,
                 lang=self.tesseract_langs,
                 config='--psm 6'
             )
-            return text.strip()
+            
+            # استخراج البيانات التفصيلية مع الثقة
+            data = pytesseract.image_to_data(
+                image,
+                lang=self.tesseract_langs,
+                config='--psm 6',
+                output_type=pytesseract.Output.DICT
+            )
+            
+            # حساب متوسط الثقة للنص المستخرج
+            confidences = [int(conf) for conf in data['conf'] if conf != '-1']
+            avg_confidence = sum(confidences) / len(confidences) if confidences else 0
+            
+            return text.strip(), avg_confidence
         except Exception as e:
             logger.error(f"Tesseract OCR error: {str(e)}")
-            return ""
+            return "", 0
     
     def ocr_easyocr(self, image: np.ndarray, use_arabic: bool = True) -> str:
         """OCR باستخدام EasyOCR"""
