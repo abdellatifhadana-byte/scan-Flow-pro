@@ -97,6 +97,11 @@ class OCREngine:
         """استخراج الكود من النص بعد الكلمة المفتاحية"""
         text = text.replace('\n', ' ').replace('\r', ' ')
         
+        logger.info(f"Extracting code from text (length: {len(text)})")
+        logger.info(f"Keyword: '{keyword}'")
+        logger.info(f"Text preview: {text[:200]}")
+        
+        # البحث عن الكلمة المفتاحية والكود بعدها
         keyword_patterns = [
             keyword,
             keyword.replace(' ', ''),
@@ -104,15 +109,21 @@ class OCREngine:
         ]
         
         for pattern in keyword_patterns:
-            regex = f"{re.escape(pattern)}[\s:]*([0-9]{{4,8}})"
+            regex = f"{re.escape(pattern)}[\\s:.-]*([0-9]{{4,8}})"
             match = re.search(regex, text, re.IGNORECASE)
             if match:
-                return match.group(1)
+                code = match.group(1)
+                logger.info(f"✓ Code found with keyword pattern '{pattern}': {code}")
+                return code
         
-        code_match = re.search(r'\b([0-9]{4,8})\b', text)
+        # البحث عن أي كود رقمي (4-8 أرقام) كخيار احتياطي
+        code_match = re.search(r'\\b([0-9]{4,8})\\b', text)
         if code_match:
-            return code_match.group(1)
+            code = code_match.group(1)
+            logger.info(f"✓ Code found without keyword: {code}")
+            return code
         
+        logger.warning(f"✗ No code found in text")
         return None
     
     def auto_detect_keyword(self, image: np.ndarray, known_keywords: List[str]) -> Optional[str]:
