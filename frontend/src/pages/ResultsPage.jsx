@@ -21,6 +21,7 @@ const ResultsPage = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [mergeNom, setMergeNom] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [editingCell, setEditingCell] = useState(null);
