@@ -702,10 +702,10 @@ async def merge_all_smart(request: MergeAllSmartRequest):
                 output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = output_dir / output_filename
                 
-                source_filename = result.get('source_filename')
-                if source_filename and source_filename in files_map:
+                file_id = result.get('file_id')
+                if file_id and file_id in files_map:
                     pdf_processor.save_page_as_pdf(
-                        files_map[source_filename],
+                        files_map[file_id],
                         result.get('source_page', 0),
                         str(output_path)
                     )
