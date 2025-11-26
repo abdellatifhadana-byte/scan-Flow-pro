@@ -201,7 +201,7 @@ class OCREngine:
         
         return None
     
-    def process_page(self, pdf_path: str, page_num: int, config: Dict) -> Optional[str]:
+    def process_page(self, pdf_path: str, page_num: int, config: Dict) -> tuple:
         """معالجة صفحة واحدة واستخراج الكود"""
         try:
             logger.info(f"Processing page {page_num} from {pdf_path}")
