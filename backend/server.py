@@ -34,7 +34,7 @@ RESULTS_DIR.mkdir(exist_ok=True)
 (RESULTS_DIR / "codes").mkdir(exist_ok=True)
 (RESULTS_DIR / "temp").mkdir(exist_ok=True)
 
-ocr_engine = OCREngine()
+ocr_engine = OCREngine(use_easyocr=False)
 pdf_processor = PDFProcessor()
 smart_merge = SmartMerge()
 
