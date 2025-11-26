@@ -107,7 +107,7 @@ class OCREngine:
             logger.error(f"EasyOCR error: {str(e)}")
             return ""
     
-    def extract_code_from_text(self, text: str, keyword: str) -> Optional[str]:
+    def extract_code_from_text(self, text: str, keyword: str, base_confidence: float = 0) -> tuple:
         """استخراج الكود من النص بعد الكلمة المفتاحية"""
         text = text.replace('\n', ' ').replace('\r', ' ')
         
