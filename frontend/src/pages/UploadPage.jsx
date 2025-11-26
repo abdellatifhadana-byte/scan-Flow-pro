@@ -143,18 +143,6 @@ const UploadPage = () => {
 
       <div className="card">
         <div className="mb-4">
-          <label className="block text-sm font-semibold mb-2">الاسم (nom)</label>
-          <Input
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            placeholder="أدخل الاسم الذي سيُستخدم في التسمية"
-            className="w-full"
-            data-testid="nom-input"
-          />
-        </div>
-
-        <div className="mb-4">
           <h3 className="text-lg font-semibold mb-3">الملفات المرفوعة ({files.length})</h3>
           {files.map((file) => (
             <div key={file.file_id} className="file-item" data-testid={`file-item-${file.file_id}`}>
