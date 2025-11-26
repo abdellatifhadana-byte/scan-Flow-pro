@@ -108,16 +108,19 @@ class OCREngine:
             return ""
     
     def extract_code_from_text(self, text: str, keyword: str, base_confidence: float = 0) -> tuple:
-        """استخراج الكود من النص بعد الكلمة المفتاحية"""
+        """استخراج الكود من النص بعد الكلمة المفتاحية - يرجع (code, confidence)"""
         text = text.replace('\n', ' ').replace('\r', ' ')
         
         logger.info(f"Extracting code from text (length: {len(text)})")
         logger.info(f"Keyword: '{keyword}'")
         logger.info(f"Text preview: {text[:200]}")
+        logger.info(f"Base OCR confidence: {base_confidence:.2f}%")
         
         # تنظيف النص من الرموز والمسافات الزائدة
         cleaned_text = re.sub(r'[|،,.\s]+', ' ', text).strip()
         logger.info(f"Cleaned text: {cleaned_text}")
+        
+        confidence = base_confidence
         
         # البحث عن الكلمة المفتاحية والكود بعدها
         if keyword.strip():
@@ -132,28 +135,33 @@ class OCREngine:
                 match = re.search(regex, text, re.IGNORECASE)
                 if match:
                     code = match.group(1)
-                    logger.info(f"✓ Code found with keyword pattern '{pattern}': {code}")
-                    return code
+                    # ثقة عالية: وجدنا الكلمة المفتاحية والكود
+                    confidence = min(100, base_confidence + 20)
+                    logger.info(f"✓ Code found with keyword: {code} (confidence: {confidence:.2f}%)")
+                    return code, confidence
         
         # البحث عن أي كود رقمي (4-8 أرقام) مباشرة في النص
-        # أولاً: ابحث عن الأرقام المتصلة
         all_numbers = re.findall(r'[0-9]+', cleaned_text)
         logger.info(f"Found numbers in text: {all_numbers}")
         
         for num in all_numbers:
             if 4 <= len(num) <= 8:
-                logger.info(f"✓ Code found (direct extraction): {num}")
-                return num
+                # ثقة متوسطة: وجدنا كود بدون كلمة مفتاحية
+                confidence = base_confidence
+                logger.info(f"✓ Code found (direct): {num} (confidence: {confidence:.2f}%)")
+                return num, confidence
         
         # محاولة استخراج من النص الأصلي أيضاً
         code_match = re.search(r'([0-9]{4,8})', text)
         if code_match:
             code = code_match.group(1)
-            logger.info(f"✓ Code found (fallback): {code}")
-            return code
+            # ثقة أقل: محاولة أخيرة
+            confidence = max(0, base_confidence - 10)
+            logger.info(f"✓ Code found (fallback): {code} (confidence: {confidence:.2f}%)")
+            return code, confidence
         
         logger.warning(f"✗ No code found in text")
-        return None
+        return None, 0
     
     def auto_detect_keyword(self, image: np.ndarray, known_keywords: List[str]) -> Optional[str]:
         """الكشف التلقائي عن الكلمة المفتاحية"""
