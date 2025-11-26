@@ -168,13 +168,19 @@ const ResultsPage = () => {
       return;
     }
 
+    if (!mergeNom || mergeNom.trim() === '') {
+      toast.error('الرجاء إدخال اسم للملفات المدمجة');
+      return;
+    }
+
     try {
       toast.info(`جاري تجميع ${selectedFiles.length} ملف...`);
       
       const response = await axios.post(`${API}/merge-by-files`, {
         analysis_id: analysisId,
         parent_files: selectedFiles,
-        merge_type: 'merge'
+        merge_type: 'merge',
+        custom_nom: mergeNom.trim()
       });
       
       toast.success(`✓ ${response.data.message}`);
