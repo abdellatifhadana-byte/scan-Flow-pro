@@ -376,6 +376,11 @@ class MergeRequest(BaseModel):
     page_ids: List[str]
     merge_type: str  # "merge" or "individual" or "merge_all"
 
+class MergeByFilesRequest(BaseModel):
+    analysis_id: str
+    parent_files: List[str]  # قائمة بأسماء الملفات الأب
+    merge_type: str  # "merge" or "individual"
+
 @api_router.post("/update-page")
 async def update_page_data(update: PageUpdate):
     """تحديث بيانات صفحة وحفظها في قاعدة البيانات"""
