@@ -15,8 +15,10 @@ const ResultsPage = () => {
   const { analysisId } = useParams();
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
+  const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
+  const [groupedResults, setGroupedResults] = useState({});
 
   useEffect(() => {
     loadResults();
