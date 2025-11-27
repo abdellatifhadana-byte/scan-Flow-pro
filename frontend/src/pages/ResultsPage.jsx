@@ -381,19 +381,19 @@ const ResultsPage = () => {
           </div>
 
           {/* Merge Name Input */}
-          {selectedFiles.length > 0 && (
-            <div className="mt-6 pt-6 border-t">
+          {mergeFiles.length > 0 && (
+            <div className="mt-6 pt-6 border-t bg-purple-50 rounded-xl p-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                الاسم للملفات المدمجة (مطلوب):
+                ✍️ الاسم للملفات المدمجة (مطلوب):
               </label>
               <Input
                 value={mergeNom}
                 onChange={(e) => setMergeNom(e.target.value)}
                 placeholder="مثال: AQUIESSEMENT"
-                className="max-w-md h-11 border-2 border-gray-200 focus:border-blue-500 text-lg"
+                className="max-w-md h-11 border-2 border-purple-300 focus:border-purple-500 text-lg bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                سيتم استخدام هذا الاسم في تسمية الملفات المدمجة: P{'{code}'}-PV-{mergeNom || 'الاسم'}
+              <p className="text-xs text-gray-600 mt-2">
+                📌 سيتم استخدام هذا الاسم: <strong>P{'{code}'}-PV-{mergeNom || 'الاسم'}</strong>
               </p>
             </div>
           )}
