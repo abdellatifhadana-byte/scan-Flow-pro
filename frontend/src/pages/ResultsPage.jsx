@@ -34,7 +34,7 @@ const ResultsPage = () => {
 
   useEffect(() => {
     filterResults();
-  }, [searchTerm, filterType, selectedFiles, allPages]);
+  }, [searchTerm, filterType, displayFiles, allPages]);
 
   const loadResults = async () => {
     try {
