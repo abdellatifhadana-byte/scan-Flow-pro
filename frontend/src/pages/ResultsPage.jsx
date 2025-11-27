@@ -185,8 +185,8 @@ const ResultsPage = () => {
   };
 
   const handleMergeSelected = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error('الرجاء اختيار ملفات');
+    if (mergeFiles.length === 0) {
+      toast.error('الرجاء اختيار ملفات للتجميع');
       return;
     }
 
@@ -196,11 +196,11 @@ const ResultsPage = () => {
     }
 
     try {
-      toast.info(`جاري تجميع ${selectedFiles.length} ملف...`);
+      toast.info(`جاري تجميع ${mergeFiles.length} ملف...`);
       
       const response = await axios.post(`${API}/merge-by-files`, {
         analysis_id: analysisId,
-        parent_files: selectedFiles,
+        parent_files: mergeFiles,
         merge_type: 'merge',
         custom_nom: mergeNom.trim()
       });
