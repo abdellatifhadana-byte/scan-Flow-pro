@@ -150,20 +150,37 @@ const ResultsPage = () => {
     setEditingCell(null);
   };
 
-  const handleSelectFile = (filename) => {
-    setSelectedFiles(prev => 
+  const handleSelectDisplayFile = (filename) => {
+    setDisplayFiles(prev => 
       prev.includes(filename)
         ? prev.filter(f => f !== filename)
         : [...prev, filename]
     );
   };
 
-  const handleSelectAllFiles = () => {
+  const handleSelectAllDisplayFiles = () => {
     const uniqueFiles = getUniqueFiles();
-    if (selectedFiles.length === uniqueFiles.length) {
-      setSelectedFiles([]);
+    if (displayFiles.length === uniqueFiles.length) {
+      setDisplayFiles([]);
     } else {
-      setSelectedFiles(uniqueFiles);
+      setDisplayFiles(uniqueFiles);
+    }
+  };
+
+  const handleSelectMergeFile = (filename) => {
+    setMergeFiles(prev => 
+      prev.includes(filename)
+        ? prev.filter(f => f !== filename)
+        : [...prev, filename]
+    );
+  };
+
+  const handleSelectAllMergeFiles = () => {
+    const uniqueFiles = getUniqueFiles();
+    if (mergeFiles.length === uniqueFiles.length) {
+      setMergeFiles([]);
+    } else {
+      setMergeFiles(uniqueFiles);
     }
   };
 
