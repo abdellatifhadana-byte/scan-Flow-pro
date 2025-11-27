@@ -214,14 +214,24 @@ const ResultsPage = () => {
   };
 
   const handleMergeAll = async () => {
+    if (mergeFiles.length === 0) {
+      toast.error('الرجاء اختيار ملفات للتجميع أولاً');
+      return;
+    }
+
+    if (!mergeNom || mergeNom.trim() === '') {
+      toast.error('الرجاء إدخال اسم للملفات المدمجة');
+      return;
+    }
+
     try {
       toast.info('جاري معالجة جميع الملفات...');
       
-      // إرسال الملفات المحددة مع الاسم المخصص
+      // الملفات المحددة للتجميع + الاسم المخصص
       const response = await axios.post(`${API}/merge-all-smart`, {
         analysis_id: analysisId,
-        selected_files: selectedFiles,
-        custom_nom: mergeNom || null
+        selected_files: mergeFiles,
+        custom_nom: mergeNom.trim()
       });
       
       toast.success(`✓ ${response.data.message}`);
