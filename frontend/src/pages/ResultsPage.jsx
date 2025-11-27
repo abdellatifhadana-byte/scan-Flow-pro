@@ -94,9 +94,9 @@ const ResultsPage = () => {
       });
     }
 
-    // التصفية حسب الملفات المحددة (فقط إذا تم تحديد ملفات)
-    if (selectedFiles.length > 0) {
-      filtered = filtered.filter(page => selectedFiles.includes(page.parentFile));
+    // التصفية حسب ملفات العرض (فقط إذا تم تحديد ملفات)
+    if (displayFiles.length > 0) {
+      filtered = filtered.filter(page => displayFiles.includes(page.parentFile));
     }
 
     // التصفية حسب مستوى الثقة
