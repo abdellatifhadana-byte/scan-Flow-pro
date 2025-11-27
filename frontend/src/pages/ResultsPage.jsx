@@ -402,21 +402,32 @@ const ResultsPage = () => {
           <div className="flex gap-3 mt-6 pt-6 border-t">
             <Button 
               onClick={handleMergeSelected}
-              disabled={selectedFiles.length === 0 || !mergeNom}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg disabled:opacity-50"
+              disabled={mergeFiles.length === 0 || !mergeNom}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg disabled:opacity-50"
             >
               <Package size={18} className="ml-2" />
-              تجميع الملفات المحددة ({selectedFiles.length})
+              تجميع المحددة ({mergeFiles.length})
             </Button>
             <Button 
               variant="outline"
               onClick={handleMergeAll}
-              className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+              disabled={mergeFiles.length === 0 || !mergeNom}
+              className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 disabled:opacity-50"
             >
               <Sparkles size={18} className="ml-2" />
-              معالجة جميع الملفات
+              معالجة الكل
             </Button>
           </div>
+          {mergeFiles.length === 0 && (
+            <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
+              ⚠️ اختر ملفات من الخانة 2 للتجميع أولاً
+            </p>
+          )}
+          {mergeFiles.length > 0 && !mergeNom && (
+            <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
+              ⚠️ ادخل اسماً للملفات المدمجة
+            </p>
+          )}
         </div>
 
         {/* Statistics */}
