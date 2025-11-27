@@ -308,39 +308,75 @@ const ResultsPage = () => {
             </Button>
           </div>
 
-          {/* File Selection */}
+          {/* Display Files Selection */}
           <div className="border-t pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <FileText className="text-blue-600" size={20} />
-                اختر الملفات للعرض والمعالجة
+                📋 الخانة 1: اختر الملفات للعرض (تصفية)
               </h3>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleSelectAllFiles}
+                onClick={handleSelectAllDisplayFiles}
               >
-                {selectedFiles.length === getUniqueFiles().length ? 'إلغاء الكل' : 'تحديد الكل'}
+                {displayFiles.length === getUniqueFiles().length ? 'إلغاء الكل' : 'تحديد الكل'}
               </Button>
             </div>
             <div className="flex gap-3 flex-wrap">
               {getUniqueFiles().map((file, idx) => (
                 <div
                   key={idx}
-                  onClick={() => handleSelectFile(file)}
+                  onClick={() => handleSelectDisplayFile(file)}
                   className={`cursor-pointer px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
-                    selectedFiles.includes(file)
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-lg scale-105'
-                      : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700'
+                    displayFiles.includes(file)
+                      ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white border-transparent shadow-lg scale-105'
+                      : 'bg-white border-gray-200 hover:border-green-300 text-gray-700'
                   }`}
                 >
-                  <Checkbox checked={selectedFiles.includes(file)} />
+                  <Checkbox checked={displayFiles.includes(file)} />
                   <span className="font-medium text-sm">{file}</span>
                 </div>
               ))}
             </div>
             <p className="text-sm text-gray-500 mt-3">
-              {selectedFiles.length} من {getUniqueFiles().length} محدد
+              💡 {displayFiles.length === 0 ? 'جميع الملفات معروضة' : `${displayFiles.length} من ${getUniqueFiles().length} محدد للعرض`}
+            </p>
+          </div>
+
+          {/* Merge Files Selection */}
+          <div className="border-t pt-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Package className="text-purple-600" size={20} />
+                📦 الخانة 2: اختر الملفات للتجميع
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAllMergeFiles}
+              >
+                {mergeFiles.length === getUniqueFiles().length ? 'إلغاء الكل' : 'تحديد الكل'}
+              </Button>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              {getUniqueFiles().map((file, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectMergeFile(file)}
+                  className={`cursor-pointer px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
+                    mergeFiles.includes(file)
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg scale-105'
+                      : 'bg-white border-gray-200 hover:border-purple-300 text-gray-700'
+                  }`}
+                >
+                  <Checkbox checked={mergeFiles.includes(file)} />
+                  <span className="font-medium text-sm">{file}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500 mt-3">
+              💡 {mergeFiles.length} محدد للتجميع • الباقي ({getUniqueFiles().length - mergeFiles.length}) سيظل فردي
             </p>
           </div>
 
