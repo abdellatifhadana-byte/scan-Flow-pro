@@ -385,11 +385,17 @@ const ResultsPage = () => {
         )}
 
         {/* Results Table */}
-        {filteredPages.length === 0 ? (
+        {allPages.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
             <FileText size={64} className="mx-auto mb-4 text-gray-300" />
             <h3 className="text-xl font-semibold mb-2 text-gray-700">لا توجد نتائج</h3>
-            <p className="text-gray-500">قم بتحديد ملفات لعرض صفحاتها</p>
+            <p className="text-gray-500">لم يتم العثور على بيانات للتحليل</p>
+          </div>
+        ) : filteredPages.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+            <FileText size={64} className="mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-semibold mb-2 text-gray-700">لا توجد نتائج مطابقة</h3>
+            <p className="text-gray-500">جرب تغيير معايير البحث أو الفلترة</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
