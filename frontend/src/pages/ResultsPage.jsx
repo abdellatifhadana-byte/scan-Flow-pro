@@ -20,7 +20,8 @@ const ResultsPage = () => {
   const [filteredPages, setFilteredPages] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [displayFiles, setDisplayFiles] = useState([]);
+  const [mergeFiles, setMergeFiles] = useState([]);
   const [mergeNom, setMergeNom] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
