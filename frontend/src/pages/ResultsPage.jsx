@@ -80,6 +80,7 @@ const ResultsPage = () => {
   const filterResults = () => {
     let filtered = [...allPages];
 
+    // البحث النصي
     if (searchTerm) {
       filtered = filtered.filter(page => {
         const searchLower = searchTerm.toLowerCase();
@@ -92,15 +93,12 @@ const ResultsPage = () => {
       });
     }
 
-    // فقط اعرض الصفحات من الملفات المحددة (إذا كانت هناك ملفات محددة)
+    // التصفية حسب الملفات المحددة (فقط إذا تم تحديد ملفات)
     if (selectedFiles.length > 0) {
       filtered = filtered.filter(page => selectedFiles.includes(page.parentFile));
     }
-    // إذا لم يتم تحديد أي ملف، اعرض كل الصفحات
-    else {
-      filtered = allPages;
-    }
 
+    // التصفية حسب مستوى الثقة
     if (filterType !== 'all') {
       filtered = filtered.filter(page => {
         if (filterType === 'high') return page.confidenceLevel === 'high';
